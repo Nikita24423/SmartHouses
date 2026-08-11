@@ -1,0 +1,20 @@
+.cursor/
+
+# Local secrets and deployment metadata
+**/.env
+**/.env.*
+**/.vercel/
+
+# Dependencies and generated output
+**/node_modules/
+**/.next/
+**/out/
+**/build/
+
+# Local application data
+**/data/
+
+# Logs and transient files
+*.log
+*.tsbuildinfo
+.DS_Store
