@@ -48,6 +48,11 @@ function normalizeText(value) {
     : "";
 }
 
+function normalizeRoomType(value) {
+  const roomType = normalizeText(value).toLowerCase();
+  return ROOM_PROGRAM[roomType] ? roomType : "unknown";
+}
+
 function stableJson(value) {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
   if (value && typeof value === "object") {
@@ -72,6 +77,24 @@ export function resolveStyle(styleId) {
   return { id, name: found[0], directive: found[1] };
 }
 
+export function resolveRoomProfile({ roomType, dimensions, layout, previous = null }) {
+  if (previous) {
+    return {
+      roomType: normalizeRoomType(previous.roomType),
+      dimensions: normalizeText(previous.dimensions),
+      layout: normalizeText(previous.layout),
+      locked: true,
+    };
+  }
+
+  return {
+    roomType: normalizeRoomType(roomType),
+    dimensions: normalizeText(dimensions),
+    layout: normalizeText(layout),
+    locked: false,
+  };
+}
+
 /**
  * Builds an immutable generation context. A revision must carry a stored image
  * hash and URL from the database; accepting a browser-provided image URL here
@@ -79,7 +102,6 @@ export function resolveStyle(styleId) {
  */
 export function buildGenerationContext(input) {
   const description = normalizeText(input.description);
-  const roomType = normalizeText(input.roomType).toLowerCase() || "unknown";
   const style = resolveStyle(input.styleId);
   const modelId = normalizeText(input.modelId) || "sourceful/riverflow-v2.5-fast";
   const isRevision = Boolean(input.previousGenerationId);
@@ -93,9 +115,13 @@ export function buildGenerationContext(input) {
     throw new Error("Не найдено сохранённое изображение для повторного запроса");
   }
 
-  const dimensions = normalizeText(input.dimensions);
-  const layout = normalizeText(input.layout);
-  const furniture = ROOM_PROGRAM[roomType] ?? ROOM_PROGRAM.unknown;
+  const roomProfile = resolveRoomProfile({
+    roomType: input.roomType,
+    dimensions: input.dimensions,
+    layout: input.layout,
+    previous,
+  });
+  const furniture = ROOM_PROGRAM[roomProfile.roomType];
   const references = [
     ...(previous ? [previous.imageUrl] : []),
     ...(Array.isArray(input.sourceImages) ? input.sourceImages : []),
@@ -105,15 +131,15 @@ export function buildGenerationContext(input) {
     "Generate one photorealistic interior visualization. This is a usable completed room, not a finish-material moodboard.",
     `PROMPT VERSION: ${PROMPT_VERSION}`,
     `STYLE (${style.name}): ${style.directive}`,
-    `ROOM TYPE: ${roomType}`,
+    `ROOM TYPE (IMMUTABLE FOR THIS ROOM): ${roomProfile.roomType}`,
     `FURNITURE, APPLIANCES & FIXTURES (MANDATORY): ${furniture}. Furnish the room completely and keep every item to realistic scale.`,
-    dimensions && `DIMENSIONS (MUST MATCH): ${dimensions}`,
-    layout && `PLAN CONSTRAINTS (MUST MATCH): ${layout}`,
+    roomProfile.dimensions && `DIMENSIONS (MUST MATCH): ${roomProfile.dimensions}`,
+    roomProfile.layout && `PLAN CONSTRAINTS (MUST MATCH): ${roomProfile.layout}`,
     isRevision
-      ? "REVISION MODE: Use the first reference image as the exact existing room. Preserve the same room shell, dimensions, window and door positions, camera viewpoint, proportions, and all unchanged objects. Apply only the requested change; do not invent a different room."
+      ? "REVISION MODE — ROOM PROFILE LOCKED: Use the first reference image as the exact existing room. Preserve wall footprint, ceiling height, room dimensions, all windows, doors, columns, plumbing locations, camera viewpoint, perspective, proportions, and every unchanged object. Apply only the requested change. Do not enlarge, shrink, reconfigure, relocate, or invent a different room; do not invent a different room."
       : "INITIAL MODE: Respect all supplied plan and reference information.",
     description && `USER REQUEST: ${description}`,
-    "AVOID: empty rooms, finish-only renderings, missing required appliances, floating or distorted furniture, altered windows or doors, text, logos, watermarks, CGI artifacts.",
+    "AVOID: empty rooms, finish-only renderings, missing required appliances, floating or distorted furniture, altered walls, ceiling height, windows, doors, columns, plumbing, room size, camera viewpoint, text, logos, watermarks, CGI artifacts.",
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -122,9 +148,7 @@ export function buildGenerationContext(input) {
     promptVersion: PROMPT_VERSION,
     description,
     styleId: style.id,
-    roomType,
-    dimensions,
-    layout,
+    roomProfile,
     modelId,
     previousImageHash: previous?.imageHash ?? null,
     sourceImageHashes: Array.isArray(input.sourceImageHashes)
@@ -138,5 +162,6 @@ export function buildGenerationContext(input) {
     references,
     requestHash: sha256(stableJson(canonicalInput)),
     canonicalInput,
+    roomProfile,
   };
 }

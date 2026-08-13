@@ -22,6 +22,7 @@ textarea, select { border: 1px solid #514941; border-radius: 9px; background: #1
 .image-frame { position: relative; width: 100%; min-height: 420px; overflow: hidden; border-radius: 12px; background: #111; }
 .image-frame img { object-fit: cover; }
 .message { margin: 0; }
+.profile-lock { margin: 0; border-left: 3px solid #e9a966; padding-left: 11px; font-size: .9rem; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .secondary { background: transparent; color: #f4f0e8; border: 1px solid #675e55; }
 .auth-note { margin: 18px 0 0; text-align: center; font-size: .9rem; }

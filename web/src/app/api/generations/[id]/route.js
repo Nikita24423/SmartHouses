@@ -21,5 +21,11 @@ export async function GET(_request, { params }) {
     styleId: generation.style_id,
     model: generation.model_id,
     image: generation.image_url,
+    roomProfile: {
+      roomType: generation.room_type,
+      dimensions: generation.room_dimensions,
+      layout: generation.room_layout,
+      locked: true,
+    },
   });
 }

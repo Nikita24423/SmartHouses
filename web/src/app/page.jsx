@@ -134,7 +134,7 @@ export default function HomePage() {
           </label>
           <div className="fields">
             <label>Стиль<select value={styleId} onChange={(event) => setStyleId(event.target.value)}>{STYLES.map(([id, title]) => <option value={id} key={id}>{title}</option>)}</select></label>
-            <label>Помещение<select value={roomType} onChange={(event) => setRoomType(event.target.value)}>{ROOMS.map(([id, title]) => <option value={id} key={id}>{title}</option>)}</select></label>
+            <label>Помещение<select value={roomType} disabled={Boolean(generation?.id)} onChange={(event) => setRoomType(event.target.value)}>{ROOMS.map(([id, title]) => <option value={id} key={id}>{title}</option>)}</select></label>
           </div>
           <label className="upload">
             <span>Фото помещения или план (необязательно)</span>
@@ -150,6 +150,7 @@ export default function HomePage() {
           ) : <div className="placeholder">{isLoading ? "Задача выполняется. Её идентификатор сохранён — результат появится здесь." : "Здесь появится ваша визуализация"}</div>}
           {message && <p className="message">{message}</p>}
           {generation?.image && <div className="actions"><button type="button" onClick={(event) => submit(event, true)} disabled={isLoading}>Внести правку в этот интерьер</button><button type="button" className="secondary" onClick={reset}>Новая комната</button></div>}
+          {generation?.id && <p className="profile-lock">Параметры помещения закреплены: при правке сохраняются геометрия, планировка и ракурс. Для другой комнаты выберите «Новая комната».</p>}
         </div>
       </section>
       <p className="auth-note">Для создания визуализации войдите через <Link href="/login">безопасную авторизацию</Link>.</p>

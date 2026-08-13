@@ -79,7 +79,13 @@ export async function POST(request) {
       layout: body.layout,
       modelId: model,
       previousGenerationId: parentId,
-      previous: previous && { imageUrl: previous.image_url, imageHash: previous.image_hash },
+      previous: previous && {
+        imageUrl: previous.image_url,
+        imageHash: previous.image_hash,
+        roomType: previous.room_type,
+        dimensions: previous.room_dimensions,
+        layout: previous.room_layout,
+      },
       sourceImages,
       sourceImageHashes: sourceImages.map(hashImageDataUrl),
     });
@@ -92,6 +98,8 @@ export async function POST(request) {
       styleId: context.style.id,
       requestHash: context.requestHash,
       modelId: model,
+      roomProfile: context.roomProfile,
+      parentGenerationId: parentId,
     });
 
     if (!claimed.was_created) {
@@ -102,6 +110,7 @@ export async function POST(request) {
           image: existing?.image_url,
           style: context.style.name,
           model,
+          roomProfile: context.roomProfile,
           reused: true,
         });
       }
@@ -138,7 +147,7 @@ export async function POST(request) {
       imageHash: stored.hash,
     });
 
-    return json({ generationId, image: stored.url, style: context.style.name, model, reused: false });
+    return json({ generationId, image: stored.url, style: context.style.name, model, roomProfile: context.roomProfile, reused: false });
   } catch (error) {
     if (claimed?.was_created && user) {
       await failGeneration({ id: claimed.generation_id, userId: user.id });
