@@ -9,6 +9,7 @@ import {
   getUserByEmail,
   markGenerationRunning,
   attachInputAsset,
+  ensureUser,
   saveSourceAsset,
 } from "../../../lib/generation-store";
 import {
@@ -62,7 +63,9 @@ export async function POST(request) {
 
     assertBlobConfigured();
     user = await getUserByEmail(email);
-    if (!user) return json({ error: "Пользователь не найден" }, { status: 404 });
+    if (!user) {
+      user = await ensureUser({ email, name: session.user?.name, image: session.user?.image });
+    }
 
     const sourceImages = asImageList(body);
     const parentId = typeof body.previousGenerationId === "string" ? body.previousGenerationId : null;

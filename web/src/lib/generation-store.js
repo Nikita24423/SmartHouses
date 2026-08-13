@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 
 let sqlClient;
@@ -15,12 +16,36 @@ export async function getUserByEmail(email) {
   return rows[0] ?? null;
 }
 
+export async function ensureUser({ email, name = null, image = null }) {
+  const id = randomUUID();
+  const rows = await sql()`
+    INSERT INTO users (id, email, name, image)
+    VALUES (${id}, ${email}, ${name}, ${image})
+    ON CONFLICT (email) DO UPDATE
+      SET name = COALESCE(EXCLUDED.name, users.name),
+          image = COALESCE(EXCLUDED.image, users.image)
+    RETURNING id, email, credits_balance
+  `;
+  return rows[0];
+}
+
 export async function getRevisionContext(userId, generationId) {
   const rows = await sql()`
     SELECT g.id, g.style_id, g.model_id, a.storage_url AS image_url, a.content_hash AS image_hash
     FROM generations AS g
     JOIN assets AS a ON a.id = g.result_asset_id AND a.user_id = g.user_id
     WHERE g.id = ${generationId} AND g.user_id = ${userId} AND g.status = 'completed'
+    LIMIT 1
+  `;
+  return rows[0] ?? null;
+}
+
+export async function getGeneration(userId, generationId) {
+  const rows = await sql()`
+    SELECT g.id, g.status, g.style_id, g.model_id, a.storage_url AS image_url
+    FROM generations AS g
+    LEFT JOIN assets AS a ON a.id = g.result_asset_id AND a.user_id = g.user_id
+    WHERE g.id = ${generationId} AND g.user_id = ${userId}
     LIMIT 1
   `;
   return rows[0] ?? null;
