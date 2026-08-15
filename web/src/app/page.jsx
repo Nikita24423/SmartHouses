@@ -4,27 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const STYLES = [
-  ["auto", "Авто"],
-  ["scandinavian", "Скандинавский"],
-  ["minimalism", "Минимализм"],
-  ["classic", "Классический"],
-  ["industrial", "Индустриальный"],
-  ["hi-tech", "Хай‑тек"],
-  ["japanese", "Японский"],
-  ["mediterranean", "Средиземноморский"],
-  ["boho", "Бохо"],
-];
-
-const ROOMS = [
-  ["living", "Гостиная"],
-  ["bedroom", "Спальня"],
-  ["kitchen", "Кухня"],
-  ["bathroom", "Ванная"],
-  ["hallway", "Прихожая"],
-  ["office", "Кабинет"],
-  ["dining", "Столовая"],
-];
+const STYLES = [["auto", "Авто"], ["scandinavian", "Скандинавский"], ["minimalism", "Минимализм"], ["classic", "Классический"], ["industrial", "Индустриальный"], ["hi-tech", "Хай‑тек"], ["japanese", "Японский"], ["mediterranean", "Средиземноморский"], ["boho", "Бохо"]];
+const ROOMS = [["living", "Гостиная"], ["bedroom", "Спальня"], ["kitchen", "Кухня"], ["bathroom", "Ванная"], ["hallway", "Прихожая"], ["office", "Кабинет"], ["dining", "Столовая"]];
 
 function readFile(file) {
   return new Promise((resolve, reject) => {
@@ -35,6 +16,13 @@ function readFile(file) {
   });
 }
 
+function friendlyMessage(error) {
+  const message = error instanceof Error ? error.message : "Не удалось создать визуализацию";
+  if (/BLOB_READ_WRITE_TOKEN|хранилищ/i.test(message)) return "Не удалось сохранить результат. Повторная правка временно недоступна — попробуйте немного позже.";
+  if (/OPENROUTER|модель/i.test(message)) return "Сервис визуализации временно не ответил. Попробуйте ещё раз.";
+  return message;
+}
+
 export default function HomePage() {
   const [description, setDescription] = useState("");
   const [styleId, setStyleId] = useState("auto");
@@ -43,19 +31,22 @@ export default function HomePage() {
   const [generation, setGeneration] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [preview, setPreview] = useState("result");
+
+  const isRevision = Boolean(generation?.id);
+  const isShowingSource = preview === "source" && sourceImage;
 
   useEffect(() => {
     if (!generation?.id || generation.image || generation.status === "failed") return undefined;
-
     const timer = window.setInterval(async () => {
       try {
         const response = await fetch(`/api/generations/${generation.id}`, { cache: "no-store" });
         if (!response.ok) return;
         const data = await response.json();
-        setGeneration((current) => (current?.id === data.generationId ? { ...current, ...data, id: data.generationId } : current));
+        setGeneration((current) => current?.id === data.generationId ? { ...current, ...data, id: data.generationId } : current);
         if (data.status === "completed" || data.status === "failed") setIsLoading(false);
       } catch {
-        // Keep polling: a temporary network failure must not lose the generation id.
+        // The generation id is retained and the next poll retries automatically.
       }
     }, 2500);
     return () => window.clearInterval(timer);
@@ -64,25 +55,19 @@ export default function HomePage() {
   async function selectSourceImage(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
-      setMessage("Поддерживаются JPEG, PNG и WebP.");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setMessage("Размер изображения не должен превышать 10 МБ.");
-      return;
-    }
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) return setMessage("Поддерживаются JPEG, PNG и WebP.");
+    if (file.size > 10 * 1024 * 1024) return setMessage("Размер изображения не должен превышать 10 МБ.");
     setSourceImage(await readFile(file));
+    setPreview("source");
     setMessage("");
   }
 
-  async function submit(event, revision = false) {
+  async function submit(event) {
     event.preventDefault();
     if (isLoading) return;
-    if (revision && !generation?.id) return;
-
     setIsLoading(true);
-    setMessage(revision ? "Применяем правку к сохранённому интерьеру…" : "Создаём визуализацию…");
+    setPreview("result");
+    setMessage(isRevision ? "Сохраняем новую версию комнаты…" : "Создаём первую версию комнаты…");
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -91,21 +76,16 @@ export default function HomePage() {
           description,
           styleId,
           roomType,
-          ...(revision ? { previousGenerationId: generation.id } : { referenceImages: sourceImage ? [sourceImage] : [] }),
+          ...(isRevision ? { previousGenerationId: generation.id } : { referenceImages: sourceImage ? [sourceImage] : [] }),
         }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Не удалось создать визуализацию");
-
-      setGeneration({
-        id: data.generationId,
-        image: data.image ?? null,
-        status: data.image ? "completed" : data.status ?? "running",
-        style: data.style,
-      });
-      setMessage(data.reused ? "Найден уже сохранённый результат — повторная генерация не запускалась." : data.image ? "Готово. Теперь можно внести точечную правку." : "Задача уже выполняется — ожидаем результат." );
+      setGeneration({ id: data.generationId, image: data.image ?? null, status: data.image ? "completed" : data.status ?? "running", style: data.style });
+      setDescription("");
+      setMessage(data.reused ? "Открыта уже сохранённая версия — новая генерация не запускалась." : data.image ? "Версия сохранена. Теперь можно изменить только нужные детали." : "Версия создаётся. Результат появится здесь автоматически.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось создать визуализацию");
+      setMessage(friendlyMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -116,44 +96,33 @@ export default function HomePage() {
     setSourceImage(null);
     setDescription("");
     setMessage("");
+    setPreview("result");
   }
 
   return (
-    <main className="shell">
-      <section className="intro">
-        <p className="eyebrow">DESIGNVISION</p>
-        <h1>Интерьер, который помнит предыдущий результат</h1>
-        <p>«Авто» выбирает цельный стиль, а каждое помещение получает реалистичную мебель, технику и освещение. При правке модель использует сохранённое изображение, а не придумывает новую комнату.</p>
-      </section>
+    <main className="studio-shell">
+      <header className="studio-header"><Link href="/" className="brand" aria-label="DesignVision — рабочее пространство">DESIGNVISION</Link><p>Рабочее пространство</p></header>
+      <section className="studio-title" aria-labelledby="studio-heading"><div><p className="eyebrow">Визуализация интерьера</p><h1 id="studio-heading">Ваша комната. Последовательные изменения.</h1></div><p className="title-note">Сохраняем ракурс, планировку и контекст каждой версии.</p></section>
 
-      <section className="workspace" aria-label="Создание визуализации">
-        <form className="form" onSubmit={(event) => submit(event)}>
-          <label>
-            Что нужно создать или изменить
-            <textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} placeholder="Например: светлая гостиная для семьи, добавить книжный шкаф и мягкое вечернее освещение" rows={6} />
-          </label>
-          <div className="fields">
-            <label>Стиль<select value={styleId} onChange={(event) => setStyleId(event.target.value)}>{STYLES.map(([id, title]) => <option value={id} key={id}>{title}</option>)}</select></label>
-            <label>Помещение<select value={roomType} disabled={Boolean(generation?.id)} onChange={(event) => setRoomType(event.target.value)}>{ROOMS.map(([id, title]) => <option value={id} key={id}>{title}</option>)}</select></label>
-          </div>
-          <label className="upload">
-            <span>Фото помещения или план (необязательно)</span>
-            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectSourceImage} />
-            {sourceImage && <span className="file-ready">Изображение прикреплено</span>}
-          </label>
-          <button type="submit" disabled={isLoading}>{isLoading ? "Обрабатываем…" : "Создать визуализацию"}</button>
+      <section className="studio" aria-label="Рабочее пространство визуализации">
+        <form className="control-panel" onSubmit={submit}>
+          <div className="panel-heading"><span className="step-number">{isRevision ? "02" : "01"}</span><div><h2>{isRevision ? "Точная правка" : "Исходная комната"}</h2><p>{isRevision ? "Опишите только то, что нужно поменять." : "Добавьте фото комнаты — оно станет основой результата."}</p></div></div>
+          {!isRevision && <label className={`upload-zone${sourceImage ? " is-ready" : ""}`}><input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectSourceImage} /><span className="upload-icon" aria-hidden="true">↑</span><span>{sourceImage ? "Фото комнаты добавлено" : "Добавить фото комнаты"}</span><small>{sourceImage ? "Можно продолжить к описанию" : "JPEG, PNG или WebP до 10 МБ"}</small></label>}
+          <label className="prompt-field"><span>{isRevision ? "Что поменять, сохранив остальное?" : "Что важно в результате?"}</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} placeholder={isRevision ? "Опишите конкретное изменение" : "Опишите желаемый интерьер"} rows={isRevision ? 5 : 6} /></label>
+          <div className="fields"><label><span>Стиль</span><select value={styleId} onChange={(event) => setStyleId(event.target.value)}>{STYLES.map(([id, title]) => <option value={id} key={id}>{title}</option>)}</select></label><label><span>Помещение</span><select value={roomType} disabled={isRevision} onChange={(event) => setRoomType(event.target.value)}>{ROOMS.map(([id, title]) => <option value={id} key={id}>{title}</option>)}</select></label></div>
+          {isRevision && <div className="context-lock" role="status"><span aria-hidden="true">●</span><p><strong>Контекст закреплён</strong>Геометрия, планировка и ракурс останутся основой следующей версии.</p></div>}
+          <button className="primary-action" type="submit" disabled={isLoading}>{isLoading ? "Создаём версию…" : isRevision ? "Сохранить новую версию" : "Создать первую версию"}</button>
         </form>
 
-        <div className="result" aria-live="polite">
-          {generation?.image ? (
-            <div className="image-frame"><Image src={generation.image} alt="Сгенерированный интерьер" fill sizes="(max-width: 900px) 100vw, 52vw" unoptimized priority /></div>
-          ) : <div className="placeholder">{isLoading ? "Задача выполняется. Её идентификатор сохранён — результат появится здесь." : "Здесь появится ваша визуализация"}</div>}
-          {message && <p className="message">{message}</p>}
-          {generation?.image && <div className="actions"><button type="button" onClick={(event) => submit(event, true)} disabled={isLoading}>Внести правку в этот интерьер</button><button type="button" className="secondary" onClick={reset}>Новая комната</button></div>}
-          {generation?.id && <p className="profile-lock">Параметры помещения закреплены: при правке сохраняются геометрия, планировка и ракурс. Для другой комнаты выберите «Новая комната».</p>}
-        </div>
+        <section className="canvas" aria-live="polite">
+          <div className="canvas-topbar"><div><p className="canvas-label">{generation?.image ? "Текущая версия" : "Результат"}</p><h2>{generation?.image ? "Комната сохраняет свой контекст" : "Здесь появится ваша комната"}</h2></div>{generation?.image && sourceImage && <div className="view-switch" aria-label="Выбор изображения"><button type="button" className={preview === "source" ? "active" : ""} onClick={() => setPreview("source")}>Исходник</button><button type="button" className={preview === "result" ? "active" : ""} onClick={() => setPreview("result")}>Версия</button></div>}</div>
+          <div className={`visual-stage${isShowingSource ? " source-view" : ""}`}>{isShowingSource ? <Image src={sourceImage} alt="Исходное фото комнаты" fill sizes="(max-width: 960px) 100vw, 65vw" unoptimized priority /> : generation?.image ? <Image src={generation.image} alt="Текущая версия интерьера" fill sizes="(max-width: 960px) 100vw, 65vw" unoptimized priority /> : sourceImage ? <Image src={sourceImage} alt="Исходное фото комнаты" fill sizes="(max-width: 960px) 100vw, 65vw" unoptimized priority /> : <div className="empty-canvas"><span aria-hidden="true">+</span><p>Добавьте фото комнаты или опишите будущий интерьер.</p></div>}{isLoading && <div className="generation-state"><span className="loading-dot" />Обновляем эту комнату</div>}</div>
+          <div className="version-bar"><div className="version-item"><span className="version-dot" /><div><strong>Исходник</strong><small>{sourceImage ? "Фото комнаты" : "Описание комнаты"}</small></div></div><span className="version-line" /><div className={`version-item${generation?.id ? " current" : ""}`}><span className="version-dot" /><div><strong>{generation?.id ? "Текущая версия" : "Новая версия"}</strong><small>{generation?.id ? "Готова к правке" : "Появится после генерации"}</small></div></div></div>
+          {message && <p className="message" role="status">{message}</p>}
+          {generation?.image && <button type="button" className="new-room" onClick={reset}>Начать другую комнату</button>}
+        </section>
       </section>
-      <p className="auth-note">Для создания визуализации войдите через <Link href="/login">безопасную авторизацию</Link>.</p>
+      {!generation?.id && <p className="auth-note">Для создания визуализации войдите через <Link href="/login">авторизацию</Link>.</p>}
     </main>
   );
 }
