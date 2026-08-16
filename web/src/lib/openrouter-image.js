@@ -12,8 +12,12 @@ export function resolveImageModel(modelId) {
 }
 
 export function assertBlobConfigured() {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    throw new Error("BLOB_READ_WRITE_TOKEN не задан: результат нельзя надёжно сохранить для повторной генерации");
+  const hasReadWriteToken = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  const hasVercelOidc = Boolean(
+    process.env.BLOB_STORE_ID && process.env.VERCEL_OIDC_TOKEN
+  );
+  if (!hasReadWriteToken && !hasVercelOidc) {
+    throw new Error("Хранилище результатов не подключено");
   }
 }
 

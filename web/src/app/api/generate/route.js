@@ -20,6 +20,7 @@ import {
   persistSourceImage,
   resolveImageModel,
 } from "../../../lib/openrouter-image";
+import { applyPlanOverrides } from "../../../lib/techpassport/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -41,6 +42,58 @@ function asImageList(body) {
   return images;
 }
 
+function prepareRoomContext(body) {
+  if (body.mode !== "techpassport") {
+    return {
+      description: typeof body.description === "string" ? body.description : "",
+      roomType: body.roomType,
+      dimensions: body.dimensions,
+      layout: body.layout,
+      meta: { mode: "standard" },
+    };
+  }
+
+  if (!body.planAnalysis?.rooms?.length) throw new Error("Сначала проанализируйте техпаспорт");
+  if (typeof body.roomNumber !== "string" || !body.roomNumber) throw new Error("Укажите номер комнаты");
+
+  const ceiling = Number(body.ceilingHeightM ?? 2.7);
+  if (!Number.isFinite(ceiling) || ceiling < 2 || ceiling > 5) {
+    throw new Error("Укажите высоту потолков от 2 до 5 м");
+  }
+
+  const analysis = applyPlanOverrides(body.planAnalysis, body.roomOverrides);
+  const room = analysis.rooms.find((candidate) => candidate.number === body.roomNumber);
+  if (!room) throw new Error(`Комната №${body.roomNumber} не найдена в плане`);
+
+  const label = Array.isArray(body.roomLabels)
+    ? body.roomLabels.find((candidate) => candidate.number === room.number)
+    : null;
+  const roomType = label?.typeId || room.suggestedType || "unknown";
+  const dimensions = [
+    room.dimensions,
+    room.widthM && room.lengthM ? `${room.widthM} × ${room.lengthM} м` : "",
+    room.areaSqm ? `площадь ${room.areaSqm} м²` : "",
+    `высота потолка ${ceiling} м`,
+  ].filter(Boolean).join("; ");
+  const layout = [
+    `Комната №${room.number}`,
+    analysis.layoutSummary,
+    room.shape && `форма: ${room.shape}`,
+    room.windows && `окна: ${room.windows}`,
+    room.doors && `двери: ${room.doors}`,
+    room.openings?.length && `проёмы: ${JSON.stringify(room.openings)}`,
+    room.notes,
+  ].filter(Boolean).join("; ");
+
+  return {
+    description: typeof body.description === "string" ? body.description : "",
+    roomType,
+    dimensions,
+    layout,
+    meta: { mode: "techpassport", roomNumber: room.number, roomType },
+  };
+}
+
 export async function POST(request) {
   const session = await auth();
   const email = session?.user?.email;
@@ -56,7 +109,8 @@ export async function POST(request) {
   let claimed = null;
   let user = null;
   try {
-    const description = typeof body.description === "string" ? body.description : "";
+    const prepared = prepareRoomContext(body);
+    const description = prepared.description;
     if (description.length > 2000) {
       return json({ error: "Описание слишком длинное (макс. 2000 символов)" }, { status: 400 });
     }
@@ -74,9 +128,9 @@ export async function POST(request) {
     const context = buildGenerationContext({
       description,
       styleId: body.styleId,
-      roomType: body.roomType,
-      dimensions: body.dimensions,
-      layout: body.layout,
+      roomType: prepared.roomType,
+      dimensions: prepared.dimensions,
+      layout: prepared.layout,
       modelId: model,
       previousGenerationId: parentId,
       previous: previous && {
@@ -111,11 +165,14 @@ export async function POST(request) {
           style: context.style.name,
           model,
           roomProfile: context.roomProfile,
+          imageModel: model,
+          remaining: user.credits_balance,
+          ...prepared.meta,
           reused: true,
         });
       }
       return json(
-        { generationId: claimed.generation_id, status: claimed.generation_status, reused: true },
+        { generationId: claimed.generation_id, status: claimed.generation_status, remaining: user.credits_balance, ...prepared.meta, reused: true },
         { status: 202 }
       );
     }
@@ -147,7 +204,19 @@ export async function POST(request) {
       imageHash: stored.hash,
     });
 
-    return json({ generationId, image: stored.url, style: context.style.name, model, roomProfile: context.roomProfile, reused: false });
+    const updatedUser = await getUserByEmail(email);
+
+    return json({
+      generationId,
+      image: stored.url,
+      style: context.style.name,
+      model,
+      imageModel: model,
+      roomProfile: context.roomProfile,
+      remaining: updatedUser?.credits_balance ?? Math.max(0, user.credits_balance - 1),
+      ...prepared.meta,
+      reused: false,
+    });
   } catch (error) {
     if (claimed?.was_created && user) {
       await failGeneration({ id: claimed.generation_id, userId: user.id });

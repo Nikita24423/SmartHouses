@@ -1,6 +1,7 @@
 import "./globals.css";
 import Script from "next/script";
 import ThemeToggle from "./theme-toggle";
+import { Providers } from "@/components/providers";
 
 const themeBootScript = `try {
   const key = "designvision:theme:v1";
@@ -21,8 +22,10 @@ export default function RootLayout({ children }) {
     <html data-theme="dark" lang="ru" suppressHydrationWarning>
       <body>
         <Script id="theme-bootstrap" strategy="beforeInteractive">{themeBootScript}</Script>
-        <ThemeToggle />
-        {children}
+        <Providers>
+          <ThemeToggle />
+          {children}
+        </Providers>
       </body>
     </html>
   );

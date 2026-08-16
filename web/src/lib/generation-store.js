@@ -114,7 +114,9 @@ export async function failGeneration({ id, userId }) {
       WHERE id = ${id} AND user_id = ${userId} AND status IN ('pending', 'running')
       RETURNING user_id
     )
-    UPDATE users SET credits_balance = credits_balance + 1
+    UPDATE users
+    SET credits_balance = credits_balance + 1,
+        generations_used = GREATEST(COALESCE(generations_used, 0) - 1, 0)
     WHERE id IN (SELECT user_id FROM failed)
     RETURNING credits_balance
   `;
