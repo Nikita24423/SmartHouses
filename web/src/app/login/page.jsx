@@ -23,10 +23,10 @@ export default async function LoginPage({ searchParams }) {
     <main className="login-shell">
       <section className="login-card">
         <p className="eyebrow">DESIGNVISION</p>
-        <h1>Сохраните контекст своей комнаты</h1>
-        <p>После входа откроется рабочее пространство: там будут сохранены изображения и последовательность правок.</p>
-        <form action={loginWithGoogle}><button type="submit">Продолжить с Google</button></form>
-        {hasYandex && <form action={loginWithYandex}><button className="secondary" type="submit">Продолжить с Яндекс</button></form>}
+        <h1>Создайте интерьер своей комнаты</h1>
+        <p>Войдите, чтобы начать визуализацию.</p>
+        <form action={loginWithGoogle}><button className="auth-provider google" type="submit"><span className="provider-mark">G</span>Продолжить с Google</button></form>
+        {hasYandex && <form action={loginWithYandex}><button className="auth-provider yandex" type="submit"><span className="provider-mark">Я</span>Продолжить с Яндекс</button></form>}
         <Link href="/">Вернуться на главную</Link>
       </section>
     </main>
