@@ -3,7 +3,7 @@
 :root,
 :root[data-theme="dark"] {
   color-scheme: dark;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   background: #10100f;
   color: #f1efe9;
   --background: #10100f;
@@ -60,19 +60,55 @@ body { background: var(--background); color: var(--foreground); margin: 0; min-w
 button, textarea, select, input { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: wait; opacity: .62; }
-a { color: inherit; }
+a:not([class]) { color: inherit; }
+
+.dv-logo {
+  align-items: center;
+  display: inline-flex;
+  flex: none;
+  gap: .68rem;
+  text-decoration: none;
+}
+.dv-logo-symbol {
+  align-items: center;
+  background: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--foreground));
+  border-radius: .72rem;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 17%, transparent), inset 0 1px rgba(255,255,255,.28);
+  color: #10120d;
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+.dv-logo-symbol svg { height: 100%; width: 100%; }
+.dv-logo-symbol path:first-child { fill: none; stroke: currentColor; stroke-linejoin: round; stroke-width: 1.9; }
+.dv-logo-symbol path:last-child { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.dv-logo-symbol-sm { border-radius: .6rem; height: 1.85rem; width: 1.85rem; }
+.dv-logo-wordmark {
+  display: inline-flex;
+  font-size: .96rem;
+  font-weight: 720;
+  letter-spacing: -.045em;
+  line-height: 1;
+}
+.dv-logo-wordmark-accent { color: var(--muted); font-weight: 520; }
+.dv-logo-sm { gap: .55rem; }
+.dv-logo-sm .dv-logo-wordmark { font-size: .82rem; letter-spacing: -.035em; }
+.dv-logo:focus-visible { border-radius: .75rem; outline: 2px solid var(--accent); outline-offset: 4px; }
 
 .app-shell { background: var(--background); color: var(--foreground); }
 body:has(.app-shell) > .theme-switcher,
 body:has(.app-shell) > script + .theme-switcher { display: none; }
 .safe-top { padding-top: max(.5rem, var(--safe-top)); }
 .safe-bottom { padding-bottom: max(.75rem, var(--safe-bottom)); }
-.safe-x { padding-left: max(0px, var(--safe-left)); padding-right: max(0px, var(--safe-right)); }
+.safe-x { padding-left: max(.75rem, var(--safe-left)); padding-right: max(.75rem, var(--safe-right)); }
 .touch-target { min-height: 2.75rem; min-width: 2.75rem; }
 .chat-scroll::-webkit-scrollbar { width: 6px; }
 .chat-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .app-shell select option { background: var(--surface); color: var(--foreground); }
 @media (max-width: 639px) { .responsive-heading { font-size: clamp(1.5rem, 5vw, 2.25rem); } }
+@media (min-width: 640px) { .safe-x { padding-left: max(1rem, var(--safe-left)); padding-right: max(1rem, var(--safe-right)); } }
 
 .theme-switcher { backdrop-filter: blur(14px); background: rgba(24, 24, 22, .88); border: 1px solid rgba(241, 239, 233, .15); border-radius: 999px; box-shadow: 0 12px 38px rgba(0, 0, 0, .24); display: flex; gap: 2px; padding: 3px; position: fixed; right: 22px; top: 22px; z-index: 20; }
 .theme-option { align-items: center; background: transparent; border: 0; border-radius: 999px; color: #a8a79f; display: inline-flex; font-size: .73rem; font-weight: 760; gap: 6px; padding: 8px 10px; transition: background .2s, color .2s, box-shadow .2s; }

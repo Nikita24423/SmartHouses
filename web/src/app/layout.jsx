@@ -1,5 +1,7 @@
 import "./globals.css";
 import Script from "next/script";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import ThemeToggle from "./theme-toggle";
 import { Providers } from "@/components/providers";
 
@@ -19,8 +21,13 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html data-theme="dark" lang="ru" suppressHydrationWarning>
-      <body>
+    <html
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      data-theme="dark"
+      lang="ru"
+      suppressHydrationWarning
+    >
+      <body className={GeistSans.className}>
         <Script id="theme-bootstrap" strategy="beforeInteractive">{themeBootScript}</Script>
         <Providers>
           <ThemeToggle />

@@ -7,6 +7,20 @@ import { useTheme } from "@/components/theme-provider";
 import { useLocale } from "@/components/locale-provider";
 import { LogoWithText } from "@/components/logo";
 import {
+  ArrowUpIcon,
+  BlueprintIcon,
+  CloseIcon,
+  HistoryIcon,
+  LockIcon,
+  MenuIcon,
+  MoonIcon,
+  PaletteIcon,
+  PaperclipIcon,
+  PlusIcon,
+  SettingsIcon,
+  SunIcon,
+} from "@/components/ui-icons";
+import {
   loadSessionsAsync,
   saveSessions,
   createSession,
@@ -1084,7 +1098,7 @@ export function ChatApp() {
               className="touch-target rounded-lg p-2 text-muted hover:bg-surface-hover"
               aria-label="Скрыть меню"
             >
-              ✕
+              <CloseIcon className="h-5 w-5" />
             </button>
           </div>
 
@@ -1093,7 +1107,7 @@ export function ChatApp() {
               onClick={handleNewChat}
               className="flex w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm font-medium transition hover:bg-surface-hover"
             >
-              <span className="text-lg leading-none">+</span>
+              <PlusIcon className="h-4 w-4" />
               {tr("app.newChat")}
             </button>
           </div>
@@ -1110,7 +1124,7 @@ export function ChatApp() {
                     : "text-muted hover:bg-surface-hover hover:text-foreground"
                 }`}
               >
-                <span className="mt-0.5 shrink-0 text-muted">▢</span>
+                <HistoryIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
                 <span className="line-clamp-2">{s.title}</span>
               </button>
             ))}
@@ -1159,7 +1173,7 @@ export function ChatApp() {
       {/* Main */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="safe-top safe-x flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border px-3 py-2 sm:px-4 sm:py-2.5">
+        <header className="safe-top safe-x flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background/90 py-2 backdrop-blur-xl sm:py-2.5">
           <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
             {!sidebarOpen && (
               <button
@@ -1167,7 +1181,7 @@ export function ChatApp() {
                 className="touch-target shrink-0 rounded-lg border border-border p-2 text-muted hover:bg-surface-hover"
                 aria-label="Открыть меню"
               >
-                ☰
+                <MenuIcon className="h-5 w-5" />
               </button>
             )}
             <div className="flex shrink-0 rounded-lg border border-border bg-surface p-0.5 text-[11px] sm:text-xs">
@@ -1176,7 +1190,7 @@ export function ChatApp() {
                 onClick={() => switchMode("standard")}
                 className={`touch-target rounded-md px-2 py-1.5 transition sm:px-3 ${
                   activeMode === "standard"
-                    ? "bg-foreground text-background"
+                    ? "bg-accent text-[#10120d] shadow-sm"
                     : "text-muted hover:text-foreground"
                 }`}
               >
@@ -1188,20 +1202,20 @@ export function ChatApp() {
                 onClick={() => switchMode("techpassport")}
                 className={`touch-target rounded-md px-2 py-1.5 transition sm:px-3 ${
                   activeMode === "techpassport"
-                    ? "bg-foreground text-background"
+                    ? "bg-accent text-[#10120d] shadow-sm"
                     : canTech
                       ? "text-muted hover:text-foreground"
                       : "text-muted/50"
                 }`}
                 title={canTech ? undefined : tr("payment.modeLocked")}
               >
-                <span className="sm:hidden">
+                <span className="inline-flex items-center gap-1 sm:hidden">
                   {tr("app.modeTechPassportShort")}
-                  {!canTech ? " 🔒" : ""}
+                  {!canTech ? <LockIcon className="h-3.5 w-3.5" /> : null}
                 </span>
-                <span className="hidden sm:inline">
+                <span className="hidden items-center gap-1 sm:inline-flex">
                   {tr("app.modeTechPassport")}
-                  {!canTech ? " 🔒" : ""}
+                  {!canTech ? <LockIcon className="h-3.5 w-3.5" /> : null}
                 </span>
               </button>
               <button
@@ -1209,27 +1223,27 @@ export function ChatApp() {
                 onClick={() => switchMode("house3d")}
                 className={`touch-target rounded-md px-2 py-1.5 transition sm:px-3 ${
                   activeMode === "house3d"
-                    ? "bg-foreground text-background"
+                    ? "bg-accent text-[#10120d] shadow-sm"
                     : canHouse3d
                       ? "text-muted hover:text-foreground"
                       : "text-muted/50"
                 }`}
                 title={canHouse3d ? undefined : tr("payment.modeLocked")}
               >
-                <span className="sm:hidden">
+                <span className="inline-flex items-center gap-1 sm:hidden">
                   {tr("app.modeHouse3dShort")}
-                  {!canHouse3d ? " 🔒" : ""}
+                  {!canHouse3d ? <LockIcon className="h-3.5 w-3.5" /> : null}
                 </span>
-                <span className="hidden sm:inline">
+                <span className="hidden items-center gap-1 sm:inline-flex">
                   {tr("app.modeHouse3d")}
-                  {!canHouse3d ? " 🔒" : ""}
+                  {!canHouse3d ? <LockIcon className="h-3.5 w-3.5" /> : null}
                 </span>
               </button>
             </div>
             <select
               value={styleId}
               onChange={(e) => setStyleId(e.target.value)}
-              className="hidden max-w-[11rem] truncate rounded-lg border border-border bg-surface px-2 py-1.5 text-sm sm:block md:max-w-none md:px-3"
+              className="hidden max-w-[12rem] truncate rounded-lg border border-border bg-surface px-3 py-1.5 text-sm lg:block xl:max-w-none"
             >
               <option value={NO_STYLE_ID}>{tr("app.styleLabel")}: {tr("app.styleAuto")}</option>
               {DESIGN_STYLES.map((s) => (
@@ -1250,20 +1264,19 @@ export function ChatApp() {
             <button
               type="button"
               onClick={() => setShowSettings((v) => !v)}
-              className="touch-target rounded-lg border border-border px-2.5 py-1.5 text-sm text-muted transition hover:bg-surface-hover hover:text-foreground"
+              className={`touch-target rounded-lg border border-border px-2.5 py-1.5 text-sm transition hover:bg-surface-hover hover:text-foreground ${showSettings ? "bg-surface-hover text-foreground" : "text-muted"}`}
               aria-label={tr("app.settings")}
+              aria-expanded={showSettings}
             >
-              ⚙
+              <SettingsIcon className="h-[1.1rem] w-[1.1rem]" />
             </button>
             <button
               onClick={toggleTheme}
-              className="touch-target rounded-lg border border-border px-2.5 py-1.5 text-sm text-muted transition hover:bg-surface-hover hover:text-foreground"
-              aria-label="Theme"
+              className="touch-target inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-sm text-muted transition hover:bg-surface-hover hover:text-foreground"
+              aria-label={theme === "dark" ? tr("app.themeLight") : tr("app.themeDark")}
             >
-              <span className="sm:hidden">{theme === "dark" ? "☀️" : "🌙"}</span>
-              <span className="hidden sm:inline">
-                {theme === "dark" ? `☀️ ${tr("app.themeLight")}` : `🌙 ${tr("app.themeDark")}`}
-              </span>
+              {theme === "dark" ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+              <span className="hidden lg:inline">{theme === "dark" ? tr("app.themeLight") : tr("app.themeDark")}</span>
             </button>
           </div>
         </header>
@@ -1815,7 +1828,7 @@ export function ChatApp() {
 
                 <form
                   onSubmit={handleSubmit}
-                  className="rounded-2xl border border-border bg-input-bg shadow-sm"
+                  className="rounded-2xl border border-border bg-input-bg shadow-sm transition focus-within:border-foreground/25 focus-within:ring-2 focus-within:ring-accent/15"
                 >
                   <textarea
                     ref={textareaRef}
@@ -1835,15 +1848,16 @@ export function ChatApp() {
                         onClick={() => planInputRef.current?.click()}
                         className="flex min-h-10 items-center gap-1 rounded-lg px-2 py-2 text-xs text-muted transition hover:bg-surface-hover hover:text-foreground sm:gap-1.5 sm:px-2.5 sm:py-1.5"
                       >
-                        <span className="sm:hidden">📐</span>
-                        <span className="hidden sm:inline">📐 {tr("app.plan")}</span>
+                        <BlueprintIcon className="h-4 w-4" />
+                        <span className="hidden sm:inline">{tr("app.plan")}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowStylePicker((v) => !v)}
-                        className="min-h-10 truncate rounded-lg px-2 py-2 text-xs text-muted transition hover:bg-surface-hover hover:text-foreground sm:px-2.5 sm:py-1.5"
+                        className="inline-flex min-h-10 items-center gap-1.5 truncate rounded-lg px-2 py-2 text-xs text-muted transition hover:bg-surface-hover hover:text-foreground sm:px-2.5 sm:py-1.5"
                       >
-                        🎨 {styleLabel}
+                        <PaletteIcon className="h-4 w-4 shrink-0" />
+                        <span className="truncate">{styleLabel}</span>
                       </button>
                     </div>
                     <button
@@ -1853,10 +1867,10 @@ export function ChatApp() {
                           ? loading || !isCeilingHeightValid
                           : !canGenerateTechPassport
                       }
-                      className="touch-target flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-foreground text-lg text-background transition hover:opacity-80 disabled:opacity-30"
+                      className="touch-target flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-[#10120d] shadow-sm transition hover:brightness-105 disabled:opacity-30"
                       aria-label={activeMode === "house3d" ? "Построить 3D" : "Сгенерировать комнаты"}
                     >
-                      ↑
+                      <ArrowUpIcon className="h-5 w-5" />
                     </button>
                   </div>
                   <input
@@ -1871,7 +1885,7 @@ export function ChatApp() {
             ) : (
               <form
                 onSubmit={handleSubmit}
-                className="rounded-2xl border border-border bg-input-bg shadow-sm"
+                className="rounded-2xl border border-border bg-input-bg shadow-sm transition focus-within:border-foreground/25 focus-within:ring-2 focus-within:ring-accent/15"
               >
                 <textarea
                   ref={textareaRef}
@@ -1891,24 +1905,25 @@ export function ChatApp() {
                       onClick={() => fileInputRef.current?.click()}
                       className="flex min-h-10 items-center gap-1 rounded-lg px-2 py-2 text-xs text-muted transition hover:bg-surface-hover hover:text-foreground sm:gap-1.5 sm:px-2.5 sm:py-1.5"
                     >
-                      <span className="sm:hidden">📎</span>
-                      <span className="hidden sm:inline">📎 {tr("app.files")}</span>
+                      <PaperclipIcon className="h-4 w-4" />
+                      <span className="hidden sm:inline">{tr("app.files")}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowStylePicker((v) => !v)}
-                      className="min-h-10 truncate rounded-lg px-2 py-2 text-xs text-muted transition hover:bg-surface-hover hover:text-foreground sm:px-2.5 sm:py-1.5"
+                      className="inline-flex min-h-10 items-center gap-1.5 truncate rounded-lg px-2 py-2 text-xs text-muted transition hover:bg-surface-hover hover:text-foreground sm:px-2.5 sm:py-1.5"
                     >
-                      🎨 {styleLabel}
+                      <PaletteIcon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{styleLabel}</span>
                     </button>
                   </div>
                   <button
                     type="submit"
                     disabled={!canGenerateStandard}
-                    className="touch-target flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-foreground text-lg text-background transition hover:opacity-80 disabled:opacity-30"
+                    className="touch-target flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-[#10120d] shadow-sm transition hover:brightness-105 disabled:opacity-30"
                     aria-label="Отправить"
                   >
-                    ↑
+                    <ArrowUpIcon className="h-5 w-5" />
                   </button>
                 </div>
                 <input
