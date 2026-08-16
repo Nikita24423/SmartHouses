@@ -14,6 +14,7 @@ import {
 } from "../../../lib/generation-store";
 import {
   assertBlobConfigured,
+  GENERATION_UNAVAILABLE_MESSAGE,
   generateImage,
   hashImageDataUrl,
   persistGeneratedImage,
@@ -222,7 +223,12 @@ export async function POST(request) {
       await failGeneration({ id: claimed.generation_id, userId: user.id });
     }
     const message = error instanceof Error ? error.message : "Не удалось создать визуализацию";
+    console.error("Image generation failed", {
+      generationId: claimed?.generation_id ?? null,
+      code: error && typeof error === "object" ? error.code : null,
+      message,
+    });
     if (/credits|лимит/i.test(message)) return json({ error: "Лимит генераций исчерпан" }, { status: 429 });
-    return json({ error: message }, { status: 400 });
+    return json({ error: GENERATION_UNAVAILABLE_MESSAGE }, { status: 500 });
   }
 }

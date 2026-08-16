@@ -6,6 +6,8 @@ const ALLOWED_IMAGE_MODELS = new Set([
   "google/gemini-3.1-flash-lite-image",
 ]);
 
+export const GENERATION_UNAVAILABLE_MESSAGE = "Не удалось создать интерьер. Попробуйте ещё раз.";
+
 export function resolveImageModel(modelId) {
   const candidate = modelId || process.env.OPENROUTER_IMAGE_MODEL || "sourceful/riverflow-v2.5-fast";
   return ALLOWED_IMAGE_MODELS.has(candidate) ? candidate : "sourceful/riverflow-v2.5-fast";
@@ -13,11 +15,15 @@ export function resolveImageModel(modelId) {
 
 export function assertBlobConfigured() {
   const hasReadWriteToken = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
-  const hasVercelOidc = Boolean(
-    process.env.BLOB_STORE_ID && process.env.VERCEL_OIDC_TOKEN
-  );
-  if (!hasReadWriteToken && !hasVercelOidc) {
-    throw new Error("Хранилище результатов не подключено");
+  const hasVercelBlobStore = Boolean(process.env.BLOB_STORE_ID);
+
+  // On Vercel, @vercel/blob reads the short-lived OIDC token itself at
+  // request time. Requiring that internal token here causes false negatives
+  // when only the store connection is exposed to the deployment.
+  if (!hasReadWriteToken && !hasVercelBlobStore) {
+    const error = new Error("Blob result storage is not configured");
+    error.code = "RESULT_STORAGE_UNAVAILABLE";
+    throw error;
   }
 }
 
