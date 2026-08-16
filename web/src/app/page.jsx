@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { LogoWithText } from "@/components/logo";
 
 export default function HomePage() {
   return (
     <main className="landing-shell">
       <nav className="landing-nav">
-        <Link href="/" className="brand">DESIGNVISION</Link>
+        <LogoWithText size="md" />
         <Link href="/login?callbackUrl=%2Fstudio" className="login-link">Войти</Link>
       </nav>
 
@@ -31,7 +32,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="value-strip" aria-label="Принципы работы DesignVision">
+      <section className="value-strip" aria-label="Принципы работы «Дизайн по Плану»">
         <article><span>01</span><h2>Одна комната — разные идеи</h2><p>Пробуйте варианты отделки, мебели и освещения для одного пространства.</p></article>
         <article><span>02</span><h2>Только нужные изменения</h2><p>Пользователь сам формулирует правку — интерфейс не навязывает случайные сценарии.</p></article>
         <article><span>03</span><h2>История, к которой можно вернуться</h2><p>Можно открыть любую версию и продолжить работу именно от неё.</p></article>

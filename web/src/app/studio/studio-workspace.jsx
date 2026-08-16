@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LogoWithText } from "@/components/logo";
 
 const STYLES = [["auto", "Авто"], ["scandinavian", "Скандинавский"], ["minimalism", "Минимализм"], ["classic", "Классический"], ["industrial", "Индустриальный"], ["hi-tech", "Хай‑тек"], ["japanese", "Японский"], ["mediterranean", "Средиземноморский"], ["boho", "Бохо"]];
 const ROOMS = [["living", "Гостиная"], ["bedroom", "Спальня"], ["kitchen", "Кухня"], ["bathroom", "Ванная"], ["hallway", "Прихожая"], ["office", "Кабинет"], ["dining", "Столовая"]];
@@ -107,7 +107,7 @@ export default function HomePage() {
 
   return (
     <main className="studio-shell">
-      <header className="studio-header"><Link href="/" className="brand" aria-label="DesignVision — рабочее пространство">DESIGNVISION</Link><p>Рабочее пространство</p></header>
+      <header className="studio-header"><LogoWithText size="sm" /><p>Рабочее пространство</p></header>
       <section className="studio-title" aria-labelledby="studio-heading"><div><p className="eyebrow">Визуализация интерьера</p><h1 id="studio-heading">Создайте интерьер своей комнаты.</h1></div><p className="title-note">Начните с фото комнаты и воплотите свою идею.</p></section>
 
       <section className="studio" aria-label="Рабочее пространство визуализации">
@@ -130,4 +130,3 @@ export default function HomePage() {
     </main>
   );
 }
-

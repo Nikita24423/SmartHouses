@@ -15,8 +15,16 @@ const themeBootScript = `try {
 } catch {}`;
 
 export const metadata = {
-  title: "DesignVision — визуализация интерьера",
-  description: "Создавайте реалистичные варианты интерьера для своей комнаты.",
+  title: "Дизайн по Плану — визуализация интерьеров",
+  description: "Фотореалистичный ремонт квартиры по техпаспорту: анализ плана, стили и генерация по комнатам.",
+  icons: {
+    icon: [
+      { url: "/logo-dark.png", type: "image/png" },
+      { url: "/logo-en-dark.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
+      { url: "/logo-light.jpg", type: "image/jpeg", media: "(prefers-color-scheme: light)" },
+    ],
+    apple: "/logo-dark.png",
+  },
 };
 
 export default function RootLayout({ children }) {

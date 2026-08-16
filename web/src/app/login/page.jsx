@@ -1,5 +1,6 @@
 import { signIn } from "../../auth";
 import Link from "next/link";
+import { LogoWithText } from "@/components/logo";
 
 function GoogleMark() {
   return (
@@ -33,7 +34,7 @@ export default async function LoginPage({ searchParams }) {
   return (
     <main className="login-shell">
       <section className="login-card">
-        <p className="eyebrow">DESIGNVISION</p>
+        <LogoWithText size="md" className="mb-6" />
         <h1>Создайте интерьер своей комнаты</h1>
         <p>Войдите, чтобы начать визуализацию.</p>
         <div className="auth-options">

@@ -62,41 +62,6 @@ button { cursor: pointer; }
 button:disabled { cursor: wait; opacity: .62; }
 a:not([class]) { color: inherit; }
 
-.dv-logo {
-  align-items: center;
-  display: inline-flex;
-  flex: none;
-  gap: .68rem;
-  text-decoration: none;
-}
-.dv-logo-symbol {
-  align-items: center;
-  background: var(--accent);
-  border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--foreground));
-  border-radius: .72rem;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 17%, transparent), inset 0 1px rgba(255,255,255,.28);
-  color: #10120d;
-  display: inline-flex;
-  height: 2.25rem;
-  justify-content: center;
-  width: 2.25rem;
-}
-.dv-logo-symbol svg { height: 100%; width: 100%; }
-.dv-logo-symbol path:first-child { fill: none; stroke: currentColor; stroke-linejoin: round; stroke-width: 1.9; }
-.dv-logo-symbol path:last-child { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
-.dv-logo-symbol-sm { border-radius: .6rem; height: 1.85rem; width: 1.85rem; }
-.dv-logo-wordmark {
-  display: inline-flex;
-  font-size: .96rem;
-  font-weight: 720;
-  letter-spacing: -.045em;
-  line-height: 1;
-}
-.dv-logo-wordmark-accent { color: var(--muted); font-weight: 520; }
-.dv-logo-sm { gap: .55rem; }
-.dv-logo-sm .dv-logo-wordmark { font-size: .82rem; letter-spacing: -.035em; }
-.dv-logo:focus-visible { border-radius: .75rem; outline: 2px solid var(--accent); outline-offset: 4px; }
-
 .app-shell { background: var(--background); color: var(--foreground); }
 body:has(.app-shell) > .theme-switcher,
 body:has(.app-shell) > script + .theme-switcher { display: none; }
