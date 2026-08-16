@@ -1302,7 +1302,7 @@ export function ChatApp() {
         <div className="chat-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {isEmpty && !loading ? (
             <div className="flex h-full min-h-[12rem] flex-col items-center justify-center px-4 pb-24 sm:pb-32">
-              <h1 className="responsive-heading text-center font-serif font-normal tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              <h1 className="responsive-heading text-center font-medium tracking-[-0.045em] text-foreground sm:text-4xl md:text-5xl">
                 {activeMode === "techpassport"
                   ? tr("app.emptyTechPassport")
                   : activeMode === "house3d"
