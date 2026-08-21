@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildGenerationContext } from "../src/lib/generation-context.js";
+import {
+  buildGenerationContext,
+  inferRoomType,
+  resolveRequestedRoomType,
+} from "../src/lib/generation-context.js";
 
 test("Авто формирует обязательный стиль и полный набор мебели", () => {
   const context = buildGenerationContext({
@@ -12,6 +16,19 @@ test("Авто формирует обязательный стиль и пол�
   assert.equal(context.style.id, "auto");
   assert.match(context.prompt, /Select one coherent contemporary interior style/);
   assert.match(context.prompt, /refrigerator, cooktop, oven, extractor hood/);
+});
+
+test("автоопределение распознаёт кухню и не допускает кровать", () => {
+  assert.equal(inferRoomType("Нужна светлая кухня для семьи"), "kitchen");
+  assert.equal(resolveRequestedRoomType("auto", "Сделай современную кухню"), "kitchen");
+  assert.equal(resolveRequestedRoomType("kitchen", "Спальня в скандинавском стиле"), "kitchen");
+
+  const context = buildGenerationContext({
+    roomType: "kitchen",
+    description: "Светлая кухня",
+  });
+  assert.match(context.prompt, /This is a kitchen, never a bedroom/);
+  assert.match(context.prompt, /Do not add a bed/);
 });
 
 test("повторный запрос использует сохранённое изображение первым reference", () => {

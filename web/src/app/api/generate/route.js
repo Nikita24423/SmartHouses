@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { auth } from "../../../auth";
-import { buildGenerationContext } from "../../../lib/generation-context";
+import {
+  buildGenerationContext,
+  resolveRequestedRoomType,
+} from "../../../lib/generation-context";
 import {
   claimGeneration,
   completeGeneration,
@@ -45,9 +48,10 @@ function asImageList(body) {
 
 function prepareRoomContext(body) {
   if (body.mode !== "techpassport") {
+    const description = typeof body.description === "string" ? body.description : "";
     return {
-      description: typeof body.description === "string" ? body.description : "",
-      roomType: body.roomType,
+      description,
+      roomType: resolveRequestedRoomType(body.roomType, description),
       dimensions: body.dimensions,
       layout: body.layout,
       meta: { mode: "standard" },

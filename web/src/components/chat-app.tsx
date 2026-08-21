@@ -97,6 +97,7 @@ export function ChatApp() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [description, setDescription] = useState("");
   const [styleId, setStyleId] = useState(NO_STYLE_ID);
+  const [standardRoomType, setStandardRoomType] = useState("auto");
   const [files, setFiles] = useState<{ name: string; preview: string; dataUrl: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState<LoadingStage>(null);
@@ -707,6 +708,7 @@ export function ChatApp() {
         body: JSON.stringify({
           description: prompt || undefined,
           styleId,
+          roomType: standardRoomType,
           referenceImages: sentFiles.map((f) => f.dataUrl),
           imageModel: imageModel || undefined,
         }),
@@ -1046,6 +1048,7 @@ export function ChatApp() {
   }
 
   const styleLabel = styleNameFromId(styleId);
+  const standardRoomTypeLabel = locale === "en" ? "Room: Auto" : "Помещение: Авто";
   const subPlanId = session?.user?.subscriptionPlan ?? null;
   const subExpires = session?.user?.subscriptionExpiresAt ?? null;
   const subActive = isSubscriptionActive(subPlanId, subExpires);
@@ -1916,6 +1919,19 @@ export function ChatApp() {
                       <PaletteIcon className="h-4 w-4 shrink-0" />
                       <span className="truncate">{styleLabel}</span>
                     </button>
+                    <select
+                      value={standardRoomType}
+                      onChange={(e) => setStandardRoomType(e.target.value)}
+                      aria-label={locale === "en" ? "Room type" : "Тип помещения"}
+                      className="min-h-10 max-w-[9.75rem] truncate rounded-lg bg-transparent px-2 py-2 text-xs text-muted transition hover:bg-surface-hover hover:text-foreground focus:outline-none sm:max-w-[12rem] sm:px-2.5 sm:py-1.5"
+                    >
+                      <option value="auto">{standardRoomTypeLabel}</option>
+                      {ROOM_TYPES.filter((type) => type.id !== "unknown").map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {locale === "en" ? type.labelEn : type.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <button
                     type="submit"

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-export const PROMPT_VERSION = "interior-context-v1";
+export const PROMPT_VERSION = "interior-context-v2";
 
 const AUTO_STYLE = {
   id: "auto",
@@ -42,6 +42,33 @@ const ROOM_PROGRAM = {
   unknown: "complete, room-appropriate furniture, lighting, storage, and appliances where function requires them",
 };
 
+const ROOM_IDENTITY = {
+  living: "This is a living room, not a bedroom. Do not add a bed.",
+  bedroom: "This is a bedroom. A bed is required; do not turn it into a kitchen.",
+  kitchen: "This is a kitchen, never a bedroom. Kitchen cabinetry and appliances are required. Do not add a bed.",
+  bathroom: "This is a bathroom, not a bedroom or kitchen. Use realistic plumbing fixtures only.",
+  toilet: "This is a WC, not a bedroom or kitchen. Use compact realistic plumbing fixtures only.",
+  hallway: "This is an entry hall or corridor, not a bedroom. Keep a clear circulation path and do not add a bed.",
+  balcony: "This is a balcony or loggia, not a bedroom. Keep a safe clear path to the railing and do not add a bed.",
+  storage: "This is a storage room, not a bedroom. Prioritize shelving and storage; do not add a bed.",
+  office: "This is a home office, not a bedroom. A desk and ergonomic chair are required; do not add a bed.",
+  dining: "This is a dining room, not a bedroom. A dining table and chairs are required; do not add a bed.",
+  unknown: "Follow the user's description and supplied references to determine the room function.",
+};
+
+const ROOM_TYPE_KEYWORDS = [
+  ["kitchen", /кух|kitchen/i],
+  ["bedroom", /спаль|кроват|bedroom/i],
+  ["bathroom", /ванн|душ|bathroom|санузел/i],
+  ["toilet", /туалет|\bwc\b|\bтоалет/i],
+  ["living", /гостин|\bзал\b|living room/i],
+  ["hallway", /прихож|коридор|hallway|corridor/i],
+  ["balcony", /балкон|лоджи|balcony|loggia/i],
+  ["storage", /кладов|гардеробн|storage room|pantry/i],
+  ["office", /кабинет|рабоч(?:ая|ий) комнат|home office/i],
+  ["dining", /столов(?:ая|ую)|dining room/i],
+];
+
 function normalizeText(value) {
   return typeof value === "string"
     ? value.normalize("NFC").trim().replace(/\s+/g, " ")
@@ -51,6 +78,18 @@ function normalizeText(value) {
 function normalizeRoomType(value) {
   const roomType = normalizeText(value).toLowerCase();
   return ROOM_PROGRAM[roomType] ? roomType : "unknown";
+}
+
+export function inferRoomType(description) {
+  const text = normalizeText(description);
+  const found = ROOM_TYPE_KEYWORDS.find(([, matcher]) => matcher.test(text));
+  return found ? found[0] : "unknown";
+}
+
+export function resolveRequestedRoomType(roomType, description) {
+  const requested = normalizeText(roomType).toLowerCase();
+  if (requested && requested !== "auto" && ROOM_PROGRAM[requested]) return requested;
+  return inferRoomType(description);
 }
 
 function stableJson(value) {
@@ -122,6 +161,7 @@ export function buildGenerationContext(input) {
     previous,
   });
   const furniture = ROOM_PROGRAM[roomProfile.roomType];
+  const roomIdentity = ROOM_IDENTITY[roomProfile.roomType];
   const references = [
     ...(previous ? [previous.imageUrl] : []),
     ...(Array.isArray(input.sourceImages) ? input.sourceImages : []),
@@ -132,6 +172,7 @@ export function buildGenerationContext(input) {
     `PROMPT VERSION: ${PROMPT_VERSION}`,
     `STYLE (${style.name}): ${style.directive}`,
     `ROOM TYPE (IMMUTABLE FOR THIS ROOM): ${roomProfile.roomType}`,
+    `ROOM IDENTITY (NON-NEGOTIABLE): ${roomIdentity}`,
     `FURNITURE, APPLIANCES & FIXTURES (MANDATORY): ${furniture}. Furnish the room completely and keep every item to realistic scale.`,
     roomProfile.dimensions && `DIMENSIONS (MUST MATCH): ${roomProfile.dimensions}`,
     roomProfile.layout && `PLAN CONSTRAINTS (MUST MATCH): ${roomProfile.layout}`,
