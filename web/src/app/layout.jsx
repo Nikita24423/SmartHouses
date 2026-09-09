@@ -15,15 +15,11 @@ const themeBootScript = `try {
 } catch {}`;
 
 export const metadata = {
-  title: "Дизайн по Плану — визуализация интерьеров",
-  description: "Фотореалистичный ремонт квартиры по техпаспорту: анализ плана, стили и генерация по комнатам.",
+  title: "Дизайн по плану — визуализация интерьеров",
+  description: "Увидьте интерьер комнаты до ремонта: фото или техпаспорт, стиль и фотореалистичный вариант с мебелью и светом.",
   icons: {
-    icon: [
-      { url: "/logo-dark.png", type: "image/png" },
-      { url: "/logo-en-dark.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
-      { url: "/logo-light.jpg", type: "image/jpeg", media: "(prefers-color-scheme: light)" },
-    ],
-    apple: "/logo-dark.png",
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: "/icon.svg",
   },
 };
 

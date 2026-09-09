@@ -1,5 +1,6 @@
 import { auth } from "../../../../auth";
-import { getGeneration, getUserByEmail } from "../../../../lib/generation-store";
+import { getUserByEmail } from "../../../../lib/db";
+import { getGeneration } from "../../../../lib/generation-store";
 
 export const runtime = "nodejs";
 

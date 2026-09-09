@@ -14,7 +14,7 @@ test("Авто формирует обязательный стиль и пол�
   });
 
   assert.equal(context.style.id, "auto");
-  assert.match(context.prompt, /Select one coherent contemporary interior style/);
+  assert.match(context.prompt, /coherent contemporary apartment renovation style/);
   assert.match(context.prompt, /refrigerator, cooktop, oven, extractor hood/);
 });
 
@@ -49,7 +49,7 @@ test("повторный запрос использует сохранённо�
     "https://blob.example/plans/plan.jpg",
   ]);
   assert.match(context.prompt, /REVISION MODE/);
-  assert.match(context.prompt, /do not invent a different room/);
+  assert.match(context.prompt, /invent a different room/);
 });
 
 test("без сохранённого контекста повторная генерация отклоняется", () => {
@@ -75,3 +75,104 @@ test("одинаковый нормализованный контекст по�
     buildGenerationContext({ ...common, description: "Добавь шкаф" }).requestHash
   );
 });
+
+test("фото комнаты — это edit кадра, а не новая композиция", () => {
+  const context = buildGenerationContext({
+    styleId: "scandinavian",
+    roomType: "living",
+    description: "сделай гостиную",
+    sourceImages: ["data:image/jpeg;base64,xx"],
+    sourceImageHashes: ["ab"],
+  });
+
+  assert.match(context.prompt, /EDIT the attached photograph/);
+  assert.match(context.prompt, /PHOTO EDIT MODE/);
+  assert.match(context.prompt, /PHOTO FIDELITY/);
+  assert.match(context.prompt, /PRIORITY HIERARCHY/);
+  assert.match(context.prompt, /ZERO new walls/);
+  assert.match(context.prompt, /ZERO new windows/);
+  assert.match(context.prompt, /WINDOW SIZE LOCK/);
+  assert.match(context.prompt, /TV\/media unit is optional/);
+  assert.doesNotMatch(context.prompt, /^Generate one photorealistic/);
+});
+
+test("техпаспорт с планом — не edit фотографии комнаты", () => {
+  const context = buildGenerationContext({
+    styleId: "scandinavian",
+    roomType: "kitchen",
+    description: "кухня по плану",
+    layout: "окна: одно на нижней стене; двери: в коридор №6",
+    sourceImages: ["data:image/jpeg;base64,plan"],
+    sourceImageHashes: ["planhash"],
+    photoEdit: false,
+  });
+
+  assert.match(context.prompt, /Generate one photorealistic/);
+  assert.match(context.prompt, /PLAN \/ REFERENCE MODE/);
+  assert.match(context.prompt, /refrigerator, cooktop, oven, extractor hood/);
+  assert.doesNotMatch(context.prompt, /EDIT the attached photograph/);
+  assert.doesNotMatch(context.prompt, /PHOTO EDIT MODE/);
+  assert.doesNotMatch(context.prompt, /TV\/media unit is optional/);
+});
+
+test("пустой список проёмов всё равно запрещает закрывать дыры в фото", () => {
+  const context = buildGenerationContext({
+    styleId: "scandinavian",
+    roomType: "living",
+    description: "ремонт",
+    sourceImages: ["data:image/jpeg;base64,xx"],
+    sourceImageHashes: ["cd"],
+    photoEdit: true,
+    roomGeometry: {
+      complexity: "complex",
+      constructionShell: true,
+      openings: [],
+      nestedSpaces: [],
+    },
+  });
+
+  assert.match(context.prompt, /copy every doorway, passage, and window/i);
+});
+
+test("сложная комната вставляет проёмы и вложенный объём в промпт", () => {
+  const context = buildGenerationContext({
+    styleId: "scandinavian",
+    roomType: "living",
+    description: "ремонт",
+    sourceImages: ["data:image/jpeg;base64,xx"],
+    sourceImageHashes: ["cd"],
+    roomGeometry: {
+      complexity: "complex",
+      constructionShell: true,
+      camera: "wide-angle from the corner, eye level",
+      layout: "non-rectangular, partition and nested hallway",
+      openings: [
+        {
+          type: "doorway",
+          wall: "center-left",
+          relativeSize: "about one-third of the partition",
+          visibleThrough: "hallway of white blocks",
+          mustKeepClear: true,
+        },
+        {
+          type: "window",
+          wall: "right",
+          relativeSize: "large rectangular opening",
+          visibleThrough: "red brick building and sky",
+          mustKeepClear: true,
+        },
+      ],
+      nestedSpaces: ["hallway through the central doorway"],
+      solidWallsForFurniture: "continuous left block wall; not the doorway",
+      generationDirectives: ["keep the central passage empty"],
+    },
+  });
+
+  assert.match(context.prompt, /Complexity: complex/);
+  assert.match(context.prompt, /DOORWAY on the center-left wall/);
+  assert.match(context.prompt, /hallway of white blocks/);
+  assert.match(context.prompt, /NESTED SPACES/);
+  assert.match(context.prompt, /Construction shell: yes/);
+  assert.match(context.prompt, /skip it if it would cover an opening/);
+});
+

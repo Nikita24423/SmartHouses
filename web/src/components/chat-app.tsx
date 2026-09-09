@@ -176,7 +176,17 @@ export function ChatApp() {
     !lastGalleryKey;
   const remaining = session?.user?.generationsRemaining ?? 0;
   const hasInput = description.trim().length > 0 || files.length > 0;
-  const canGenerateStandard = remaining > 0 && hasInput && !loading;
+  const lastRefinableMessage = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role === "assistant" && msg.generationContext && msg.image) return msg;
+    }
+    return null;
+  }, [messages]);
+  const hasGeneratedImages = Boolean(lastRefinableMessage);
+  const canRefineExisting =
+    Boolean(lastRefinableMessage) && description.trim().length > 0 && files.length === 0 && !loading;
+  const canGenerateStandard = (remaining > 0 || canRefineExisting) && hasInput && !loading;
   const canAnalyzePlan = !!planImage && !loading;
   const parsedCeilingHeight = parseFloat(
     ceilingHeightM.replace(",", ".").replace(/[^\d.]/g, "")
@@ -234,6 +244,36 @@ export function ChatApp() {
       cancelled = true;
     };
   }, [email]);
+
+  useEffect(() => {
+    if (!email) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch("/api/user");
+        if (!response.ok || cancelled) return;
+        const data = await response.json();
+        if (cancelled) return;
+        await update({
+          user: {
+            generationsRemaining: data.generationsRemaining,
+            generationsUsed: data.generationsUsed,
+            generationsLimit: data.generationsLimit,
+          },
+        });
+        if (data.generationsRemaining > 0) {
+          setError((prev) =>
+            prev === "Лимит генераций исчерпан" ? null : prev
+          );
+        }
+      } catch {
+        // ignore — session refetch will retry
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [email, update]);
 
   useEffect(() => {
     fetch("/api/models")
@@ -669,6 +709,11 @@ export function ChatApp() {
     }
 
     const prompt = description.trim();
+    if (lastRefinableMessage && files.length === 0 && prompt) {
+      await handleRefine(lastRefinableMessage);
+      return;
+    }
+
     const styleName = styleNameFromId(styleId);
 
     const userMsg: ChatMessage = {
@@ -711,11 +756,13 @@ export function ChatApp() {
           roomType: standardRoomType,
           referenceImages: sentFiles.map((f) => f.dataUrl),
           imageModel: imageModel || undefined,
+          requestNonce: crypto.randomUUID(),
         }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Ошибка генерации");
+      if (!data.image) throw new Error(data.error ?? "Генерация не вернула изображение. Попробуйте ещё раз.");
 
       const genContext: GenerationContext = {
         mode: "standard",
@@ -837,11 +884,13 @@ export function ChatApp() {
             roomNumber,
             techPassportImage: planImage.dataUrl,
             imageModel: imageModel || undefined,
+            requestNonce: crypto.randomUUID(),
           }),
         });
 
         const data = await response.json();
         if (!response.ok) throw new Error(data.error ?? "Ошибка генерации");
+        if (!data.image) throw new Error(data.error ?? "Генерация не вернула изображение. Попробуйте ещё раз.");
 
         const genContext: GenerationContext = {
           mode: "techpassport",
@@ -918,7 +967,7 @@ export function ChatApp() {
     options?: { newStyleId?: string; extraNotes?: string }
   ) {
     const ctx = msg.generationContext;
-    if (!ctx || !activeId || remaining <= 0 || loading) return;
+    if (!ctx || !activeId || loading) return;
 
     const effectiveStyleId = options?.newStyleId ?? ctx.styleId;
     const effectiveModel = ctx.imageModel ?? imageModel;
@@ -941,12 +990,10 @@ export function ChatApp() {
         description: mergedDescription,
         imageModel: effectiveModel || undefined,
         regenerate: true,
+        requestNonce: crypto.randomUUID(),
       };
 
-      if (!ctx.generationId) {
-        if (!msg.image?.startsWith("data:image/")) {
-          throw new Error("Эту старую версию нельзя продолжить. Создайте новый вариант комнаты.");
-        }
+      if (msg.image) {
         body.referenceImages = [msg.image];
       }
 
@@ -967,6 +1014,7 @@ export function ChatApp() {
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Ошибка генерации");
+      if (!data.image) throw new Error(data.error ?? "Генерация не вернула изображение. Попробуйте ещё раз.");
 
       const updatedContext: GenerationContext = {
         ...ctx,
@@ -1061,9 +1109,6 @@ export function ChatApp() {
       ? "standard"
       : appMode;
 
-  const hasGeneratedImages = messages.some(
-    (m) => m.role === "assistant" && !!m.image && m.generationContext
-  );
   const inputPlaceholder =
     hasGeneratedImages && activeMode !== "house3d"
       ? tr("app.placeholderRefine")
@@ -1081,7 +1126,7 @@ export function ChatApp() {
           type="button"
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
-          aria-label="Закрыть меню"
+          aria-label={tr("app.closeMenu")}
         />
       )}
 
@@ -1099,7 +1144,7 @@ export function ChatApp() {
             <button
               onClick={() => setSidebarOpen(false)}
               className="touch-target rounded-lg p-2 text-muted hover:bg-surface-hover"
-              aria-label="Скрыть меню"
+              aria-label={tr("app.hideMenu")}
             >
               <CloseIcon className="h-5 w-5" />
             </button>
@@ -1182,7 +1227,7 @@ export function ChatApp() {
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="touch-target shrink-0 rounded-lg border border-border p-2 text-muted hover:bg-surface-hover"
-                aria-label="Открыть меню"
+                aria-label={tr("app.openMenu")}
               >
                 <MenuIcon className="h-5 w-5" />
               </button>
@@ -1345,7 +1390,7 @@ export function ChatApp() {
                           items={item.messages}
                           planImage={galleryPlan}
                           planRooms={galleryRooms}
-                          canEdit={remaining > 0 && !loading}
+                          canEdit={!loading}
                           pendingRooms={isActiveBatch ? batchPendingRooms : undefined}
                           loadingRoom={isActiveBatch ? loadingRoom : null}
                           labels={{
@@ -1438,7 +1483,7 @@ export function ChatApp() {
                           >
                             {tr("app.download")}
                           </a>
-                          {msg.generationContext && remaining > 0 && !loading && (
+                          {msg.generationContext && !loading && (
                             <>
                               <button
                                 type="button"
@@ -1563,7 +1608,7 @@ export function ChatApp() {
             {error && (
               <p className="mb-2 text-center text-sm text-red-500">{error}</p>
             )}
-            {remaining <= 0 && (
+            {remaining <= 0 && !hasGeneratedImages && (
               <p className="mb-2 text-center text-sm text-accent">
                 {tr("app.limitReached")}{" "}
                 <button
@@ -1573,6 +1618,13 @@ export function ChatApp() {
                 >
                   {tr("app.buyCredits")}
                 </button>
+              </p>
+            )}
+            {remaining <= 0 && hasGeneratedImages && (
+              <p className="mb-2 text-center text-xs text-muted">
+                {locale === "en"
+                  ? "New generations require credits. Editing existing results is free."
+                  : "Новые генерации требуют лимит. Правка уже созданных результатов — бесплатно."}
               </p>
             )}
             {activeMode === "techpassport" && selectedRooms.length > remaining && remaining > 0 && (
@@ -1937,7 +1989,7 @@ export function ChatApp() {
                     type="submit"
                     disabled={!canGenerateStandard}
                     className="touch-target flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-[#10120d] shadow-sm transition hover:brightness-105 disabled:opacity-30"
-                    aria-label="Отправить"
+                    aria-label={tr("app.send")}
                   >
                     <ArrowUpIcon className="h-5 w-5" />
                   </button>

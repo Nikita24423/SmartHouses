@@ -78,7 +78,9 @@ export default function HomePage() {
           description,
           styleId,
           roomType,
-          ...(isRevision ? { previousGenerationId: generation.id } : { referenceImages: sourceImage ? [sourceImage] : [] }),
+          ...(isRevision
+            ? { previousGenerationId: generation.id, regenerate: true }
+            : { referenceImages: sourceImage ? [sourceImage] : [] }),
         }),
       });
       const data = await response.json();

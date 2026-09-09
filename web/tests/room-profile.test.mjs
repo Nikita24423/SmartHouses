@@ -14,7 +14,7 @@ test("revision uses the stored room profile instead of client-supplied geometry"
     },
     roomType: "kitchen",
     dimensions: "10 x 10 m",
-    layout: "move the window",
+    layout: "paint the kitchen teal and add an island island-xyz",
     description: "add a bookcase",
   });
 
@@ -27,7 +27,7 @@ test("revision uses the stored room profile instead of client-supplied geometry"
   assert.match(context.prompt, /ROOM PROFILE LOCKED/);
   assert.match(context.prompt, /ROOM TYPE \(IMMUTABLE FOR THIS ROOM\): bedroom/);
   assert.doesNotMatch(context.prompt, /10 x 10 m/);
-  assert.doesNotMatch(context.prompt, /move the window/);
+  assert.doesNotMatch(context.prompt, /island-xyz/);
 });
 
 test("a new room starts with an unlocked profile", () => {

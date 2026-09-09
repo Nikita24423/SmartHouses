@@ -1,18 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { auth } from "../../../auth";
+import { analyzeRoomGeometry } from "../../../lib/analyze-references";
 import {
   buildGenerationContext,
+  normalizeRoomTypeId,
   resolveRequestedRoomType,
 } from "../../../lib/generation-context";
+import { getUserByEmail, upsertUser } from "../../../lib/db";
 import {
   claimGeneration,
   completeGeneration,
   failGeneration,
+  findSourceAssetByHash,
   getRevisionContext,
-  getUserByEmail,
   markGenerationRunning,
-  attachInputAsset,
-  ensureUser,
   saveSourceAsset,
 } from "../../../lib/generation-store";
 import {
@@ -21,13 +22,14 @@ import {
   generateImage,
   hashImageDataUrl,
   persistGeneratedImage,
+  inferAspectRatioFromDataUrl,
   persistSourceImage,
   resolveImageModel,
 } from "../../../lib/openrouter-image";
 import { applyPlanOverrides } from "../../../lib/techpassport/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 200;
 
 function json(data, init) {
   return Response.json(data, init);
@@ -73,7 +75,7 @@ function prepareRoomContext(body) {
   const label = Array.isArray(body.roomLabels)
     ? body.roomLabels.find((candidate) => candidate.number === room.number)
     : null;
-  const roomType = label?.typeId || room.suggestedType || "unknown";
+  const roomType = normalizeRoomTypeId(label?.typeId || room.suggestedType || "unknown");
   const dimensions = [
     room.dimensions,
     room.widthM && room.lengthM ? `${room.widthM} × ${room.lengthM} м` : "",
@@ -113,6 +115,7 @@ export async function POST(request) {
 
   let claimed = null;
   let user = null;
+  let generationId = null;
   try {
     const prepared = prepareRoomContext(body);
     const description = prepared.description;
@@ -123,13 +126,69 @@ export async function POST(request) {
     assertBlobConfigured();
     user = await getUserByEmail(email);
     if (!user) {
-      user = await ensureUser({ email, name: session.user?.name, image: session.user?.image });
+      user = await upsertUser(email, session.user?.name, session.user?.image);
     }
 
     const sourceImages = asImageList(body);
-    const parentId = typeof body.previousGenerationId === "string" ? body.previousGenerationId : null;
-    const previous = parentId ? await getRevisionContext(user.id, parentId) : null;
+    let parentId = typeof body.previousGenerationId === "string" ? body.previousGenerationId : null;
+    let previous = parentId ? await getRevisionContext(user.id, parentId) : null;
+    if (parentId && !previous) {
+      parentId = null;
+    }
+    const isFreeRevision = Boolean(parentId) || body.regenerate === true;
     const model = resolveImageModel(body.imageModel);
+
+    let inputAssetId = null;
+    let persistedSourceUrl = null;
+    if (sourceImages[0]) {
+      const sourceHash = hashImageDataUrl(sourceImages[0]);
+      const existingSource = await findSourceAssetByHash(user.id, sourceHash);
+      if (existingSource?.storage_url) {
+        inputAssetId = existingSource.id;
+        persistedSourceUrl = existingSource.storage_url;
+      } else {
+        const source = await persistSourceImage({
+          sourceHash,
+          value: sourceImages[0],
+        });
+        const asset = await saveSourceAsset({
+          id: source.id,
+          userId: user.id,
+          imageUrl: source.url,
+          imageHash: source.hash,
+        });
+        inputAssetId = asset.id;
+        persistedSourceUrl = asset.storage_url;
+      }
+    }
+
+    const photoEdit = Boolean(parentId) || (prepared.meta.mode === "standard" && sourceImages.length > 0);
+    let roomGeometry = null;
+    if (prepared.meta.mode === "standard" && sourceImages.length > 0 && !parentId) {
+      roomGeometry = await analyzeRoomGeometry(
+        [persistedSourceUrl || sourceImages[0]],
+        description
+      );
+      if (prepared.roomType === "unknown" && roomGeometry?.roomTypeHint) {
+        const hinted = normalizeRoomTypeId(roomGeometry.roomTypeHint);
+        if (hinted !== "unknown") prepared.roomType = hinted;
+      }
+    }
+
+    const aspectRatio =
+      prepared.meta.mode === "standard" && sourceImages[0]
+        ? inferAspectRatioFromDataUrl(sourceImages[0]) || "auto"
+        : parentId
+          ? "auto"
+          : "16:9";
+
+    console.info("generation room geometry", {
+      complexity: roomGeometry?.complexity ?? null,
+      openings: roomGeometry?.openings?.length ?? 0,
+      constructionShell: Boolean(roomGeometry?.constructionShell),
+      aspectRatio,
+    });
+
     const context = buildGenerationContext({
       description,
       styleId: body.styleId,
@@ -147,9 +206,22 @@ export async function POST(request) {
       },
       sourceImages,
       sourceImageHashes: sourceImages.map(hashImageDataUrl),
+      roomGeometry,
+      photoEdit,
+      // Always unique per request so the same photo can be re-submitted even if the client omits a nonce.
+      requestNonce:
+        typeof body.requestNonce === "string" && body.requestNonce.trim()
+          ? body.requestNonce.trim()
+          : randomUUID(),
     });
 
-    const generationId = randomUUID();
+    const references = [...context.references];
+    if (sourceImages[0] && persistedSourceUrl) {
+      const index = references.indexOf(sourceImages[0]);
+      if (index >= 0) references[index] = persistedSourceUrl;
+    }
+
+    generationId = randomUUID();
     claimed = await claimGeneration({
       id: generationId,
       userId: user.id,
@@ -157,49 +229,34 @@ export async function POST(request) {
       styleId: context.style.id,
       requestHash: context.requestHash,
       modelId: model,
+      inputAssetId,
       roomProfile: context.roomProfile,
       parentGenerationId: parentId,
+      generationMode: isFreeRevision ? "revision" : prepared.meta.mode,
     });
 
     if (!claimed.was_created) {
-      if (claimed.generation_status === "completed" && claimed.result_asset_id) {
-        const existing = await getRevisionContext(user.id, claimed.generation_id);
-        return json({
-          generationId: claimed.generation_id,
-          image: existing?.image_url,
-          style: context.style.name,
-          model,
-          roomProfile: context.roomProfile,
-          imageModel: model,
-          remaining: user.credits_balance,
-          ...prepared.meta,
-          reused: true,
-        });
-      }
+      // Only in-flight duplicates remain non-created after migration 009.
       return json(
-        { generationId: claimed.generation_id, status: claimed.generation_status, remaining: user.credits_balance, ...prepared.meta, reused: true },
-        { status: 202 }
+        {
+          error: "Эта генерация уже выполняется. Подождите несколько секунд и нажмите ещё раз.",
+          generationId: claimed.generation_id,
+          status: claimed.generation_status,
+          remaining: user.credits_balance,
+          reused: true,
+        },
+        { status: 409 }
       );
     }
 
-    const references = [...context.references];
-    if (sourceImages[0]) {
-      const source = await persistSourceImage({
-        sourceHash: hashImageDataUrl(sourceImages[0]),
-        value: sourceImages[0],
-      });
-      const asset = await saveSourceAsset({
-        id: source.id,
-        userId: user.id,
-        imageUrl: source.url,
-        imageHash: source.hash,
-      });
-      await attachInputAsset({ generationId, userId: user.id, assetId: asset.id });
-      references[context.references.indexOf(sourceImages[0])] = asset.storage_url;
-    }
-
     await markGenerationRunning({ id: generationId, userId: user.id });
-    const image = await generateImage({ prompt: context.prompt, references, model });
+    const image = await generateImage({
+      prompt: context.prompt,
+      references,
+      model,
+      aspectRatio,
+      photoEdit,
+    });
     const stored = await persistGeneratedImage({ generationId, bytes: image.bytes, mediaType: image.mediaType });
     await completeGeneration({
       generationId,
@@ -224,7 +281,7 @@ export async function POST(request) {
     });
   } catch (error) {
     if (claimed?.was_created && user) {
-      await failGeneration({ id: claimed.generation_id, userId: user.id });
+      await failGeneration({ id: claimed.generation_id ?? generationId, userId: user.id });
     }
     const message = error instanceof Error ? error.message : "Не удалось создать визуализацию";
     console.error("Image generation failed", {
@@ -232,7 +289,16 @@ export async function POST(request) {
       code: error && typeof error === "object" ? error.code : null,
       message,
     });
-    if (/credits|лимит/i.test(message)) return json({ error: "Лимит генераций исчерпан" }, { status: 429 });
+    if (/credits|лимит|insufficient generation credits/i.test(message)) {
+      return json({ error: "Лимит генераций исчерпан" }, { status: 429 });
+    }
+    if (
+      /техпаспорт|номер комнаты|потолк|комната №|описание|прикрепите|стиль не найден|изображен|повторн|не более трёх|неверный формат|не найдено сохранённое/i.test(
+        message
+      )
+    ) {
+      return json({ error: message }, { status: 400 });
+    }
     return json({ error: GENERATION_UNAVAILABLE_MESSAGE }, { status: 500 });
   }
 }

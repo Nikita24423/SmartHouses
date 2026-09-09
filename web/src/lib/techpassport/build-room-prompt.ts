@@ -152,7 +152,7 @@ export function buildRoomGenerationPrompt(input: RoomPromptInput): string {
   if (input.style) {
     sections.push(buildStyleBlock(input.style));
     sections.push(
-      "Apply the design style to finishes, furniture, lighting and décor ONLY — never by expanding the room or adding columns/arches not on the plan."
+      "Apply the design style to finishes, furniture, lighting and décor ONLY — never by expanding the room or adding columns, gold wall relief, or arches not on the plan. The result must look like a contractor could complete this renovation."
     );
   } else {
     sections.push(

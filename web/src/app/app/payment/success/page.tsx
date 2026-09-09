@@ -99,7 +99,7 @@ function PaymentSuccessInner() {
         </>
       )}
       <Link
-        href="/app"
+        href="/studio"
         className="mt-8 inline-flex rounded-xl bg-foreground px-5 py-2.5 text-sm font-medium text-background transition hover:opacity-90"
       >
         {tr("payment.backToApp")}

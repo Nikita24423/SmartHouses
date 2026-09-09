@@ -1,4 +1,5 @@
 import type { ParsedRoom, TechPassportAnalysis, RoomOpening } from "./types";
+import { normalizeRoomTypeId } from "@/lib/generation-context";
 import { getOpenRouterHeaders } from "@/lib/openrouter-headers";
 
 const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -129,7 +130,7 @@ function normalizeRoom(raw: Record<string, unknown>): ParsedRoom {
   return {
     number: String(raw.number ?? raw.label ?? "?"),
     label: raw.label ? String(raw.label) : undefined,
-    suggestedType: String(raw.suggestedType ?? "unknown"),
+    suggestedType: normalizeRoomTypeId(String(raw.suggestedType ?? "unknown")),
     areaSqm: typeof raw.areaSqm === "number" ? raw.areaSqm : undefined,
     widthM: typeof raw.widthM === "number" ? raw.widthM : undefined,
     lengthM: typeof raw.lengthM === "number" ? raw.lengthM : undefined,

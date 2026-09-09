@@ -1,8 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Yandex from "next-auth/providers/yandex";
-import { ensureUser } from "./lib/generation-store";
-import { getGenerationLimitForUser, getUserByEmail } from "./lib/db";
+import { getGenerationLimitForUser, getUserByEmail, upsertUser } from "./lib/db";
 import { getAllowedModes } from "./lib/payments/packages";
 
 const providers = [
@@ -28,7 +27,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false;
-      await ensureUser({ email: user.email, name: user.name, image: user.image });
+      const account = await upsertUser(user.email, user.name, user.image);
+      user.email = account.email;
       return true;
     },
     async redirect({ url, baseUrl }) {

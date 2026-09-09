@@ -2,7 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import { v4 as uuidv4 } from "uuid";
 import { getPlanById } from "@/lib/payments/packages";
 
-function getSql() {
+export function getSql() {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error("DATABASE_URL не задан. Подключите Neon Postgres в Vercel.");
@@ -10,8 +10,9 @@ function getSql() {
   return neon(url);
 }
 
-async function ensureSchema(): Promise<void> {
-  // Schema changes are applied by versioned SQL migrations, never during requests.
+/** Canonical email key — OAuth providers may vary casing. */
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
 export interface UserRecord {
@@ -31,37 +32,34 @@ export async function upsertUser(
   name?: string | null,
   image?: string | null
 ): Promise<UserRecord> {
-  await ensureSchema();
   const sql = getSql();
-
-  const existing = await sql`
-    SELECT * FROM users WHERE email = ${email} LIMIT 1
-  `;
-
-  if (existing.length > 0) {
-    const row = existing[0] as UserRecord;
-    await sql`
+  const normalized = normalizeEmail(email);
+  const existing = await getUserByEmail(normalized);
+  if (existing) {
+    const rows = await sql`
       UPDATE users
-      SET name = ${name ?? row.name}, image = ${image ?? row.image}
-      WHERE email = ${email}
+      SET name = COALESCE(${name ?? null}, users.name),
+          image = COALESCE(${image ?? null}, users.image)
+      WHERE id = ${existing.id}
+      RETURNING *
     `;
-    const updated = await sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
-    return updated[0] as UserRecord;
+    return rows[0] as UserRecord;
   }
 
-  const id = uuidv4();
-  await sql`
+  const rows = await sql`
     INSERT INTO users (id, email, name, image)
-    VALUES (${id}, ${email}, ${name ?? null}, ${image ?? null})
+    VALUES (${uuidv4()}, ${normalized}, ${name ?? null}, ${image ?? null})
+    RETURNING *
   `;
-  const created = await sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
-  return created[0] as UserRecord;
+  return rows[0] as UserRecord;
 }
 
 export async function getUserByEmail(email: string): Promise<UserRecord | undefined> {
-  await ensureSchema();
   const sql = getSql();
-  const rows = await sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
+  const normalized = normalizeEmail(email);
+  const rows = await sql`
+    SELECT * FROM users WHERE lower(email) = ${normalized} LIMIT 1
+  `;
   return rows[0] as UserRecord | undefined;
 }
 
@@ -75,11 +73,11 @@ export function getGenerationLimit(): number {
 }
 
 export function getGenerationLimitForUser(user?: UserRecord | null): number {
-  if (user?.credits_balance != null) {
-    return Math.max(0, user.generations_used) + Math.max(0, user.credits_balance);
-  }
   if (user?.generations_limit != null && user.generations_limit > 0) {
     return user.generations_limit;
+  }
+  if (user) {
+    return Math.max(0, user.generations_used) + Math.max(0, user.credits_balance);
   }
   return getDefaultGenerationLimit();
 }
@@ -94,46 +92,27 @@ export async function setUserGenerationLimit(
   email: string,
   limit: number
 ): Promise<UserRecord> {
-  await ensureSchema();
   const sql = getSql();
   const existing = await getUserByEmail(email);
 
+  const normalized = normalizeEmail(email);
   if (existing) {
     await sql`
       UPDATE users
       SET generations_limit = ${limit},
           credits_balance = GREATEST(${limit} - generations_used, 0)
-      WHERE email = ${email}
+      WHERE lower(email) = ${normalized}
     `;
   } else {
     await sql`
       INSERT INTO users (id, email, generations_limit, credits_balance)
-      VALUES (${uuidv4()}, ${email}, ${limit}, ${limit})
+      VALUES (${uuidv4()}, ${normalized}, ${limit}, ${limit})
     `;
   }
 
   const user = await getUserByEmail(email);
   if (!user) throw new Error("Не удалось обновить лимит пользователя");
   return user;
-}
-
-export async function incrementGenerations(
-  userId: string,
-  prompt: string,
-  styleId: string
-): Promise<void> {
-  await ensureSchema();
-  const sql = getSql();
-  await sql`
-    UPDATE users
-    SET generations_used = generations_used + 1,
-        credits_balance = GREATEST(credits_balance - 1, 0)
-    WHERE id = ${userId}
-  `;
-  await sql`
-    INSERT INTO generations (id, user_id, prompt, style_id)
-    VALUES (${uuidv4()}, ${userId}, ${prompt}, ${styleId})
-  `;
 }
 
 export type PaymentOrderStatus = "pending" | "paid" | "failed" | "expired";
@@ -163,7 +142,6 @@ export async function createPaymentOrder(input: {
   currency: string;
   trackingId: string;
 }): Promise<PaymentOrder> {
-  await ensureSchema();
   const sql = getSql();
   const id = uuidv4();
   await sql`
@@ -189,7 +167,6 @@ export async function setPaymentOrderToken(
   trackingId: string,
   token: string
 ): Promise<void> {
-  await ensureSchema();
   const sql = getSql();
   await sql`
     UPDATE payment_orders SET bepaid_token = ${token}
@@ -200,7 +177,6 @@ export async function setPaymentOrderToken(
 export async function getPaymentOrderByTrackingId(
   trackingId: string
 ): Promise<PaymentOrder | undefined> {
-  await ensureSchema();
   const sql = getSql();
   const rows = await sql`
     SELECT * FROM payment_orders WHERE tracking_id = ${trackingId} LIMIT 1
@@ -219,7 +195,6 @@ export async function markPaymentOrderPaid(
   planId: string;
   expiresAt: string | null;
 }> {
-  await ensureSchema();
   const sql = getSql();
   const order = await getPaymentOrderByTrackingId(trackingId);
   if (!order) {
@@ -297,7 +272,6 @@ export async function markPaymentOrderFailed(
   trackingId: string,
   status: "failed" | "expired" = "failed"
 ): Promise<void> {
-  await ensureSchema();
   const sql = getSql();
   await sql`
     UPDATE payment_orders

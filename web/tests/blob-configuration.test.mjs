@@ -47,6 +47,10 @@ test("missing Blob configuration stays an internal error", () => {
     );
   });
 
+  withBlobEnvironment({ VERCEL_OIDC_TOKEN: "oidc_test" }, () => {
+    assert.doesNotThrow(() => assertBlobConfigured());
+  });
+
   assert.equal(
     GENERATION_UNAVAILABLE_MESSAGE,
     "Не удалось создать интерьер. Попробуйте ещё раз."

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "designvision:theme:v1";
@@ -21,7 +22,9 @@ function getThemeSnapshot() {
 }
 
 export default function ThemeToggle() {
+  const pathname = usePathname();
   const theme = useSyncExternalStore(subscribe, getThemeSnapshot, () => "dark");
+  const hide = pathname === "/" || pathname?.startsWith("/studio") || pathname?.startsWith("/login");
 
   function selectTheme(nextTheme) {
     if (nextTheme === theme) return;
@@ -32,6 +35,8 @@ export default function ThemeToggle() {
       // The selected appearance still works for this visit if storage is unavailable.
     }
   }
+
+  if (hide) return null;
 
   return (
     <div aria-label="Тема оформления" className="theme-switcher" role="group">

@@ -18,6 +18,12 @@ export const ROOM_TYPES: RoomTypeOption[] = [
   { id: "unknown", label: "Другое", labelEn: "room" },
 ];
 
+const ROOM_TYPE_IDS = new Set(ROOM_TYPES.map((item) => item.id));
+
+export function isKnownRoomTypeId(id: string): boolean {
+  return ROOM_TYPE_IDS.has(id);
+}
+
 export function getRoomTypeLabel(id: string): string {
   return ROOM_TYPES.find((t) => t.id === id)?.label ?? id;
 }

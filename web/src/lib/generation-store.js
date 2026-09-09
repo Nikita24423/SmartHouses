@@ -1,36 +1,7 @@
-import { randomUUID } from "node:crypto";
-import { neon } from "@neondatabase/serverless";
-
-let sqlClient;
-
-function sql() {
-  if (!sqlClient) {
-    if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL не задан");
-    sqlClient = neon(process.env.DATABASE_URL);
-  }
-  return sqlClient;
-}
-
-export async function getUserByEmail(email) {
-  const rows = await sql()`SELECT id, email, credits_balance FROM users WHERE email = ${email} LIMIT 1`;
-  return rows[0] ?? null;
-}
-
-export async function ensureUser({ email, name = null, image = null }) {
-  const id = randomUUID();
-  const rows = await sql()`
-    INSERT INTO users (id, email, name, image)
-    VALUES (${id}, ${email}, ${name}, ${image})
-    ON CONFLICT (email) DO UPDATE
-      SET name = COALESCE(EXCLUDED.name, users.name),
-          image = COALESCE(EXCLUDED.image, users.image)
-    RETURNING id, email, credits_balance
-  `;
-  return rows[0];
-}
+import { getSql } from "./db";
 
 export async function getRevisionContext(userId, generationId) {
-  const rows = await sql()`
+  const rows = await getSql()`
     SELECT g.id, g.style_id, g.model_id, g.room_type, g.room_dimensions, g.room_layout,
       a.storage_url AS image_url, a.content_hash AS image_hash
     FROM generations AS g
@@ -42,7 +13,7 @@ export async function getRevisionContext(userId, generationId) {
 }
 
 export async function getGeneration(userId, generationId) {
-  const rows = await sql()`
+  const rows = await getSql()`
     SELECT g.id, g.status, g.style_id, g.model_id, g.room_type, g.room_dimensions, g.room_layout,
       a.storage_url AS image_url
     FROM generations AS g
@@ -55,22 +26,34 @@ export async function getGeneration(userId, generationId) {
 
 export async function claimGeneration({
   id, userId, prompt, styleId, requestHash, modelId, inputAssetId = null, roomProfile, parentGenerationId = null,
+  generationMode = "standard",
 }) {
-  const rows = await sql()`
+  const rows = await getSql()`
     SELECT * FROM claim_generation(
       ${id}, ${userId}, ${prompt}, ${styleId}, ${requestHash}, ${modelId}, ${inputAssetId},
-      ${roomProfile.roomType}, ${roomProfile.dimensions || null}, ${roomProfile.layout || null}, ${parentGenerationId}
+      ${roomProfile.roomType}, ${roomProfile.dimensions || null}, ${roomProfile.layout || null}, ${parentGenerationId},
+      ${generationMode}
     )
   `;
   return rows[0];
 }
 
 export async function markGenerationRunning({ id, userId }) {
-  await sql()`UPDATE generations SET status = 'running' WHERE id = ${id} AND user_id = ${userId} AND status = 'pending'`;
+  await getSql()`UPDATE generations SET status = 'running' WHERE id = ${id} AND user_id = ${userId} AND status = 'pending'`;
+}
+
+export async function findSourceAssetByHash(userId, imageHash) {
+  const rows = await getSql()`
+    SELECT id, storage_url
+    FROM assets
+    WHERE user_id = ${userId} AND content_hash = ${imageHash}
+    LIMIT 1
+  `;
+  return rows[0] ?? null;
 }
 
 export async function saveSourceAsset({ id, userId, imageUrl, imageHash }) {
-  const rows = await sql()`
+  const rows = await getSql()`
     INSERT INTO assets (id, user_id, kind, storage_url, content_hash)
     VALUES (${id}, ${userId}, 'source', ${imageUrl}, ${imageHash})
     ON CONFLICT (user_id, content_hash) DO UPDATE SET storage_url = EXCLUDED.storage_url
@@ -80,7 +63,7 @@ export async function saveSourceAsset({ id, userId, imageUrl, imageHash }) {
 }
 
 export async function attachInputAsset({ generationId, userId, assetId }) {
-  const rows = await sql()`
+  const rows = await getSql()`
     UPDATE generations SET input_asset_id = ${assetId}
     WHERE id = ${generationId} AND user_id = ${userId} AND status IN ('pending', 'running')
     RETURNING id
@@ -89,15 +72,17 @@ export async function attachInputAsset({ generationId, userId, assetId }) {
 }
 
 export async function completeGeneration({ generationId, userId, assetId, imageUrl, imageHash }) {
-  const client = sql();
-  const assetRows = await client`
+  const sql = getSql();
+  const assetRows = await sql`
     INSERT INTO assets (id, user_id, kind, storage_url, content_hash)
     VALUES (${assetId}, ${userId}, 'result', ${imageUrl}, ${imageHash})
-    ON CONFLICT (user_id, content_hash) DO UPDATE SET storage_url = EXCLUDED.storage_url
+    ON CONFLICT (user_id, content_hash) DO UPDATE
+      SET storage_url = EXCLUDED.storage_url,
+          kind = 'result'
     RETURNING id, storage_url
   `;
   const asset = assetRows[0];
-  const updated = await client`
+  const updated = await sql`
     UPDATE generations SET result_asset_id = ${asset.id}, status = 'completed'
     WHERE id = ${generationId} AND user_id = ${userId} AND status IN ('pending', 'running')
     RETURNING id
@@ -108,16 +93,20 @@ export async function completeGeneration({ generationId, userId, assetId, imageU
 
 /** A status predicate prevents a duplicate error handler from refunding twice. */
 export async function failGeneration({ id, userId }) {
-  const rows = await sql()`
+  const rows = await getSql()`
     WITH failed AS (
       UPDATE generations SET status = 'failed'
       WHERE id = ${id} AND user_id = ${userId} AND status IN ('pending', 'running')
-      RETURNING user_id
+      RETURNING user_id, generation_mode
     )
     UPDATE users
-    SET credits_balance = credits_balance + 1,
-        generations_used = GREATEST(COALESCE(generations_used, 0) - 1, 0)
-    WHERE id IN (SELECT user_id FROM failed)
+    SET credits_balance = credits_balance + CASE WHEN failed.generation_mode = 'revision' THEN 0 ELSE 1 END,
+        generations_used = GREATEST(
+          generations_used - CASE WHEN failed.generation_mode = 'revision' THEN 0 ELSE 1 END,
+          0
+        )
+    FROM failed
+    WHERE users.id = failed.user_id
     RETURNING credits_balance
   `;
   return rows[0] ?? null;

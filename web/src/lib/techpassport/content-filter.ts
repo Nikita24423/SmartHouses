@@ -67,6 +67,9 @@ export const REALISM_GEOMETRY_RULES = [
   "6) Keep fixed appliances/plumbing where they are (stove, sink, radiator, etc.) unless the user explicitly asks to relocate them.",
   "7) Style must be applied ONLY as: wall finishes, flooring, furniture, lighting fixtures, textiles, and décor — adapted to THIS room's real size (often compact CIS apartment).",
   "8) Prefer fewer, correctly scaled style accents over grand monumental features that require more volume than the room has.",
+  "9) The result MUST look like a completed apartment renovation using retail furniture and standard finishes a contractor could install. Not a palace, museum, film set, or CGI fantasy.",
+  "10) NEVER: structural or decorative columns/pilasters; wall-covering gold filigree or gilded relief panels; palace-scale carved beds or floor-to-ceiling ornate wardrobes as architecture; theatrical plasterwork covering entire walls.",
+  "11) When a reference PHOTO is attached: lock the EXACT camera angle, viewpoint height, framing, and perspective. The output must look like the same shot after renovation — never a new camera position.",
   "If a style traditionally needs tall columns / grand halls / factory loft volume — ADAPT it down to surface-level décor that fits this room. Never invent extra space.",
 ].join("\n");
 

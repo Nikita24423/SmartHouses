@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import {
   createPaymentOrder,
   getUserByEmail,
+  markPaymentOrderFailed,
   setPaymentOrderToken,
 } from "@/lib/db";
 import {
@@ -92,6 +93,7 @@ export async function POST(req: Request) {
       token: checkout.token,
     });
   } catch (err) {
+    await markPaymentOrderFailed(trackingId, "failed");
     console.error("[payments/create]", err);
     return NextResponse.json(
       {

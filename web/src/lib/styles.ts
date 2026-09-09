@@ -20,16 +20,16 @@ export const DESIGN_STYLES: DesignStyle[] = [
     id: "empire",
     name: "Ампир",
     description:
-      "Имперская роскошь, величественный и помпезный стиль с элегантностью. Симметричный интерьер с центральным объектом композиции.",
+      "Сдержанная классика с симметрией: тёмное дерево, спокойные стены, точечная латунь. Как после ремонта обычной квартиры, не дворец.",
     keyElements:
-      "Симметрия, лепнина/молдинги (без колонн), тяжёлые портьеры у окон, позолоченные акценты, мотивы льва/лавра в декоре. Люстра или бра, канделябры — по масштабу комнаты.",
-    colors: "Белый, беж, благородные оттенки красного, синего, зелёного. Позолоченные или серебряные элементы.",
-    materials: "Натуральное дерево, паркет, камень, мраморная мозаика, фактурные обои.",
-    atmosphere: "Imperial grandeur, ceremonial elegance, Napoleonic-era luxury",
-    lighting: "Warm chandelier glow, candelabra highlights, dramatic but refined ambient light",
-    composition: "Strict bilateral symmetry, central focal point (console or dining table), axial furniture layout within existing walls",
+      "Симметричная мебель, тонкий потолочный молдинг, одна люстра или пара бра, латунная фурнитура, зеркало в раме. Без колонн и золотых стен.",
+    colors: "Кремовый, беж, тёплый белый; тёмное дерево; латунь точечно, не сплошным золотом.",
+    materials: "Краска, паркет или инженерная доска, текстиль, шпон/массив дерева, латунь на ручках и светильниках.",
+    atmosphere: "Calm neoclassical apartment, formal but livable, renovation-scale elegance",
+    lighting: "One modest chandelier or pair of wall sconces, warm lamps, daylight from existing windows",
+    composition: "Bilateral symmetry with ordinary furniture scale; walls stay flat painted surfaces",
     promptDirective:
-      "French Empire (Ampir) FINISHES for a normal apartment room: imperial luxury through décor and furniture ONLY — not architecture. Symmetry, ornate ceiling moldings scaled to a flat residential ceiling, silk/velvet drapes framing existing windows (do not block balcony doors), gilded bronze accents, laurel/lion motifs as wall décor, marble-look or patterned flooring, crystal chandelier sized to the room. Jewel tones with cream and gold. NEVER add Corinthian columns, never raise the ceiling, never enlarge the room into a palace hall.",
+      "Empire as a REAL APARTMENT RENOVATION, not a palace. Cream or beige painted walls (plain, maybe one quiet wallpaper panel). Thin residential crown molding only — not palace plaster. Dark-wood bed/wardrobe/nightstands of NORMAL bedroom scale with small brass handles. One gilt-framed mirror or two sconces. Simple drapes at existing windows. Optional deep-green or burgundy textile accent (throw, headboard fabric) — not gilded walls. STRICTLY FORBIDDEN: Corinthian or any columns/pilasters; gold filigree or relief covering walls; floor-to-ceiling ornate gold wardrobes as architecture; palace-scale carved beds; wall-to-wall gilded ornament.",
   },
   {
     id: "bauhaus",
@@ -44,7 +44,7 @@ export const DESIGN_STYLES: DesignStyle[] = [
     lighting: "Clean functional lighting, geometric pendant lamps, even illumination",
     composition: "Grid-based furniture layout within existing walls, objects as sculpture — do not remove walls",
     promptDirective:
-      "Bauhaus interior: pure functional modernism with geometric precision. Tubular steel furniture, modular seating, flat planes and right angles. Primary color accents — red, yellow, blue — on neutral white/gray base. Chrome, glass, bent plywood, leather straps. No ornamentation. Each object serves a purpose. Bauhaus school aesthetic: Wassily chairs, nesting tables, industrial craftsmanship meets art. Keep the real room volume unchanged.",
+      "Bauhaus as a real flat: tubular-steel or plywood chairs, modular sofa/bed, white/gray walls, one red/yellow/blue accent (cushion or lamp). No ornament. Keep the real room volume. Furniture must look commercially available.",
   },
   {
     id: "boho",
@@ -59,7 +59,7 @@ export const DESIGN_STYLES: DesignStyle[] = [
     lighting: "Layered warm lamps, Moroccan lanterns, string lights, golden ambient glow",
     composition: "Organic clustering, layered textiles, collected-over-time arrangement",
     promptDirective:
-      "Bohemian interior: eclectic global fusion with rich layered textures. Kilim rugs, macramé wall hangings, embroidered cushions, rattan furniture, vintage brass lamps. Mix of African masks, Indian textiles, Moroccan poufs. Warm earth tones — terracotta, ochre, rust — with jewel-tone accents. Plants everywhere, books stacked casually. Collected, artistic, lived-in soul without clutter chaos. Do not change room size or ceiling height.",
+      "Boho as a furnished apartment: kilim or jute rug, rattan or wood furniture of normal size, layered textiles, a few plants, warm earth tones. Lived-in, not a bazaar or tent. Do not change room size or ceiling height. No wall-to-wall hanging clutter.",
   },
   {
     id: "industrial",
@@ -70,26 +70,26 @@ export const DESIGN_STYLES: DesignStyle[] = [
       "Кирпичная или бетонная отделка стен, металлические полки и светильники, грубые фактуры — без несущих балок и двойной высоты",
     colors: "Белый, беж в сочетании с серым и чёрным.",
     materials: "Кирпич, металл, дерево, бетон.",
-    atmosphere: "Raw, urban, converted warehouse authenticity",
-    lighting: "Exposed Edison bulbs, track lighting, metal cage pendants, dramatic shadows",
-    composition: "Raw materials and utilitarian furniture within the real room footprint — no invented loft volume",
+    atmosphere: "Urban apartment with industrial finishes, not a factory conversion",
+    lighting: "Track lights or metal pendants sized for a flat, warm practical light",
+    composition: "Utilitarian furniture within the real room footprint — no invented loft volume",
     promptDirective:
-      "Industrial interior adapted to a normal apartment: brick-look or concrete wall finishes, metal shelves, Edison/track lighting, reclaimed wood and leather accents. Charcoal, rust, cream, black. Suggest industrial mood with materials and fixtures — do NOT invent factory loft height, exposed steel beams, open double-height volume, or enlarge windows beyond what exists.",
+      "Industrial as a city-apartment renovation: brick-look or microcement on existing walls, metal shelves, leather sofa or bed of normal size, track/Edison lighting. Charcoal, rust, cream, black. Do NOT invent factory loft height, exposed structural steel beams, double-height volume, or enlarge windows.",
   },
   {
     id: "classic",
     name: "Классический",
     description:
-      "Сдержанный благородный интерьер с геометричностью и симметрией. Элементы ампира, барокко, рококо.",
+      "Сдержанный европейский интерьер: дерево, симметрия, спокойные стены. Достижимо обычным ремонтом.",
     keyElements:
-      "Строгая мебель из дерева, антиквариат, картины в золочёных рамах, хрустальные люстры.",
-    colors: "Пастельные бежевый, серый, голубой; глубокие синий, зелёный, коричневый; золотистый, перламутровый.",
-    materials: "Натуральное дерево, кожа, натуральные ткани.",
-    atmosphere: "Refined dignity, timeless European elegance",
-    lighting: "Crystal chandelier scaled to the room, sconces, soft diffused light from existing windows",
-    composition: "Paired furniture, balanced symmetry, console or table as anchor — no new fireplace architecture",
+      "Деревянная мебель, паркет, картины в рамах, скромная люстра или торшер, текстиль.",
+    colors: "Беж, серый, тёплое дерево, приглушённый синий или зелёный; золото только на рамах и фурнитуре.",
+    materials: "Дерево, краска, натуральные ткани, кожа.",
+    atmosphere: "Quiet European apartment classic, livable and proportional",
+    lighting: "Daylight plus one modest chandelier or floor lamps — not a ballroom fixture",
+    composition: "Paired nightstands or chairs, balanced but not ceremonial",
     promptDirective:
-      "Classic European apartment interior: restrained elegance via furniture and finishes. Mahogany pieces, tufted upholstery, gilt-framed art, modest crown molding on the EXISTING flat ceiling, herringbone or classic parquet look. Crystal chandelier scaled to the room. Muted palette with gold accents. No palace halls, no new columns, no raised ceilings, no invented fireplace chimney breast.",
+      "Classic as a finished city apartment, not a manor. Painted walls, herringbone or oak flooring, wooden furniture of store-bought scale, tufted or simple upholstery, 1–2 framed artworks, modest molding. Gold only as small hardware or picture frames. FORBIDDEN: palace halls, columns, heavy baroque plaster covering walls, oversized crystal chandeliers, invented fireplaces.",
   },
   {
     id: "country",
@@ -104,7 +104,7 @@ export const DESIGN_STYLES: DesignStyle[] = [
     lighting: "Warm sunlight through linen curtains, ceramic table lamps, soft ambient glow",
     composition: "Cozy grouping around farmhouse table, handmade touches — no new hearth or ceiling beams",
     promptDirective:
-      "Country cottage interior adapted to an apartment: rustic charm via furniture and textiles. Heavy oak farmhouse table, checked tablecloth, open wooden shelving with ceramic dishes, terracotta-look flooring, woven baskets, dried wildflowers, patchwork quilts. Earth tones — sage, warm brown, sand, burnt orange. Do NOT add stone fireplaces, exposed ceiling beams, or enlarge the room into a cottage hall.",
+      "Country as an apartment, not a farmhouse: oak or pine furniture, linen curtains, checked or solid textiles, ceramic lamp, maybe open shelves. Earth tones. FORBIDDEN: stone fireplace, exposed rustic ceiling beams, cottage hall volume.",
   },
   {
     id: "kitsch",
@@ -119,7 +119,7 @@ export const DESIGN_STYLES: DesignStyle[] = [
     lighting: "Colorful lamps, neon accents, mismatched quirky fixtures",
     composition: "Maximalist layering, curated chaos, every surface tells a story",
     promptDirective:
-      "Kitsch interior: deliberately bold camp aesthetic where bad taste becomes art. Clashing patterns — floral wallpaper meets leopard print cushions. Vintage plastic chairs next to baroque mirror, novelty figurines, retro posters. Hot pink, lime green, electric blue combinations. Plastic, laminate, faux fur, chrome. Self-aware humor, pop culture references, gallery of found objects. Controlled creative disorder. Do not alter room volume.",
+      "Kitsch as a real apartment with personality: one patterned wallpaper wall or bright textiles, mixed vintage pieces, posters, a few figurines. Still a usable bedroom/living room with normal furniture scale. Do not fill every surface or invent palace baroque architecture. Do not alter room volume.",
   },
   {
     id: "minimalism",
@@ -149,7 +149,7 @@ export const DESIGN_STYLES: DesignStyle[] = [
     lighting: "Gallery spotlights on artwork, bright even illumination, graphic shadows",
     composition: "Art as focal point, furniture frames the gallery wall",
     promptDirective:
-      "Pop Art interior: vibrant gallery-meets-living-space. Lichtenstein-style comic panels, Warhol-inspired portraits, bold graphic posters on clean white walls. Rounded modular sofa in primary yellow or red, acrylic coffee table, chrome accents. Saturated colors — electric blue, hot pink, lemon yellow. Ben-Day dots, bold outlines, consumer culture icons. Playful, provocative, museum-quality pop art collection in a modern room. Preserve real room size.",
+      "Pop Art as a livable apartment: white or light walls, 2–4 graphic posters (comic/pop prints), one bold-color sofa or armchair, simple modern table. Saturated accents without turning the room into a museum. Preserve real room size. No wall-to-wall artwork installation, no gallery-scale hanging systems.",
   },
   {
     id: "scandinavian",
@@ -179,7 +179,7 @@ export const DESIGN_STYLES: DesignStyle[] = [
     lighting: "Bright Mediterranean sun, wrought iron fixtures, terracotta lamp glow",
     composition: "Terracotta and tile textures, relaxed furniture zones within existing openings — no new arches",
     promptDirective:
-      "Mediterranean apartment finishes: whitewashed/stucco wall texture, terracotta or tile flooring look, wrought iron lighting, blue ceramics, linen textiles, olive plants. Azure, sand, terracotta, olive. Suggest coastal villa mood with materials — do NOT cut new arches through walls, invent indoor-outdoor openings, or enlarge into a villa volume.",
+      "Mediterranean as painted/stucco-look walls, terracotta or tile-look floor, linen, olive plant, wrought-iron lamp. Azure and sand accents. FORBIDDEN: new arches cut through walls, indoor-outdoor villa openings, enlarged villa volume.",
   },
   {
     id: "futurism",
@@ -190,11 +190,11 @@ export const DESIGN_STYLES: DesignStyle[] = [
       "Округлые формы мебели, глянцевые поверхности, LED-подсветка, встроенная техника.",
     colors: "Холодный белый, серый, металл, глянцевый чёрный с 2-3 яркими акцентами.",
     materials: "Пластик, керамогранит, бетон, стекло, металл.",
-    atmosphere: "Space-age vision, technological sublime, otherworldly",
-    lighting: "LED color strips, holographic glow, indirect cove lighting, no traditional fixtures",
-    composition: "Curved furniture, floating shelves, sleek surfaces within existing walls",
+    atmosphere: "Sleek contemporary apartment with tech finishes, still a real home",
+    lighting: "Recessed or indirect LED, practical lamps — no holographic sci-fi glow",
+    composition: "Low sleek furniture, flat walls, existing window openings",
     promptDirective:
-      "Futuristic apartment interior: sci-fi mood via furniture and finishes only. Glossy surfaces, LED accents, sleek modular pieces, cool white/chrome palette. Do NOT rebuild walls into curves, do NOT add multi-level ceilings, transparent floors, or panoramic viewports that replace real windows.",
+      "Futurism as a 2020s apartment upgrade: lacquer or matte millwork, LED strip under cabinets, modular furniture with rounded corners, cool whites and chrome. Must still look inhabitable. FORBIDDEN: curved rebuilt walls, multi-level ceilings, transparent floors, spaceship viewports, holographic effects.",
   },
   {
     id: "hi-tech",
@@ -209,7 +209,7 @@ export const DESIGN_STYLES: DesignStyle[] = [
     lighting: "Halogen spots, light panels, chrome fixtures, clinical brightness",
     composition: "Geometric rigor, visible technology, glass and metal dominance",
     promptDirective:
-      "Hi-Tech interior: precision modern luxury with glass, chrome, leather and steel furniture within the existing room. Smart-home accents, monochrome with one accent. Do not add glass partitions that invent new room volumes or change openings.",
+      "Hi-Tech as a contemporary apartment: glass/metal furniture, dark or light millwork, smart TV, halogen or LED spots. Monochrome plus one accent. Do not add glass walls that invent new rooms or change openings.",
   },
   {
     id: "hygge",
@@ -239,7 +239,7 @@ export const DESIGN_STYLES: DesignStyle[] = [
     lighting: "Soft diffused daylight through sheer curtains, vintage crystal lamps",
     composition: "Distressed furniture as hero, floral arrangements, delicate layering",
     promptDirective:
-      "Shabby Chic interior: romantic weathered elegance. Distressed white-painted furniture with chipped finish, floral chintz upholstery, lace doilies. Pastel palette — soft pink, baby blue, lavender, cream. Vintage picture frames, dried flower bouquets, antique mirrors with patina. Tulle curtains, quilted bedspreads, hand-painted ceramics. Feminine, nostalgic, gently worn aristocratic charm. Do not alter room volume.",
+      "Shabby chic as painted furniture and floral textiles in a normal room: distressed white dresser, pastel bedding, sheer curtains. Not a manor. Do not alter room volume or add palace plaster.",
   },
   {
     id: "japanese",
@@ -254,7 +254,7 @@ export const DESIGN_STYLES: DesignStyle[] = [
     lighting: "Paper lantern glow, shoji screen diffusion, subtle indirect light",
     composition: "Ma (negative space), low horizontal furniture lines — no new wall alcoves",
     promptDirective:
-      "Japanese interior: zen minimalist sanctuary adapted to an apartment. Low table, zabuton, bamboo accents, natural wood, earth tones, paper lanterns, bonsai. Suggest shoji/tatami mood with finishes and furniture — do NOT rebuild walls into tokonoma alcoves, add shoji partitions that invent new rooms, or change openings.",
+      "Japanese as a calm apartment: light wood, low or standard bed, simple storage, paper lantern or warm pendant, one plant. Tatami/shoji only as a rug or screen furniture — do NOT rebuild walls into tokonoma, add room-dividing shoji architecture, or change openings.",
   },
 ];
 export function getStyleById(id: string): DesignStyle | undefined {
@@ -271,9 +271,9 @@ export interface BuildPromptInput {
 
 const PHOTO_QUALITY_BLOCK = [
   "OUTPUT: Single photorealistic interior photograph.",
-  "CAMERA: Wide-angle architectural lens (24mm), eye-level perspective, professional real estate photography.",
+  "CAMERA: If a reference room photo is attached, MATCH its exact viewpoint, height, framing, and perspective — do NOT invent a new wide architectural hero angle. Without a photo reference, use a wide-angle architectural lens (24mm) at eye level.",
   "QUALITY: 8K detail, accurate material textures, natural color grading, soft shadows, no CGI artifacts.",
-  "AVOID: Text, watermarks, logos, distorted furniture, floating objects, unrealistic proportions, cartoon style.",
+  "AVOID: Text, watermarks, logos, distorted furniture, floating objects, unrealistic proportions, cartoon style, camera angle changes when a reference photo exists.",
   GENERATION_CONTENT_RULES,
 ].join("\n");
 
@@ -281,6 +281,7 @@ function buildStyleBlock(style: DesignStyle): string {
   return [
     `=== DESIGN STYLE (SURFACE / FURNITURE / DÉCOR ONLY): ${style.name.toUpperCase()} ===`,
     "Apply this style WITHOUT changing room geometry. Adapt monumental style features down to apartment scale.",
+    "The look must be achievable by renovating this apartment (paint, flooring, furniture, lighting, textiles) — not by rebuilding it as a palace.",
     style.promptDirective,
     `Atmosphere: ${style.atmosphere}`,
     `Lighting: ${style.lighting}`,
@@ -336,6 +337,7 @@ export function buildGenerationPrompt(input: BuildPromptInput): string {
     sections.push(
       "=== REFERENCE IMAGES ===",
       "Reference photos of the real room are attached. Lock to their geometry: same walls, ceiling height, windows/doors/balcony, radiator and fixed fixtures.",
+      "Lock the EXACT camera angle, viewpoint height, and framing from the reference photo — the result must look like the same shot after renovation.",
       "Restyle surfaces and furniture only; do not invent columns, taller ceilings, or a larger footprint."
     );
   }
